@@ -1,4 +1,5 @@
 <?php
+// includes/auth.php
 session_start();
 
 // Таймаут сессии - 1 час
@@ -51,6 +52,15 @@ function requireRole($requiredRole) {
     }
 }
 
+// Функция для проверки нескольких ролей с редиректом
+function requireAnyRole($allowedRoles) {
+    requireAuth();
+    if (!hasAnyRole($allowedRoles)) {
+        header('Location: /web-ipam/index.php');
+        exit();
+    }
+}
+
 // Защита от CSRF - генерация токена
 function generateCsrfToken() {
     if (empty($_SESSION['csrf_token'])) {
@@ -68,13 +78,5 @@ function validateCsrfToken($token) {
 function safeRedirect($url) {
     header('Location: ' . $url);
     exit();
-}
-
-function requireAnyRole($allowedRoles) {
-    requireAuth();
-    if (!hasAnyRole($allowedRoles)) {
-        header('Location: /web-ipam/index.php');
-        exit();
-    }
 }
 ?>
