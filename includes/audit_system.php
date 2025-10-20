@@ -10,6 +10,41 @@ class AuditSystem {
     const IP_BLOCK_DURATION_MINUTES = 60;        // Блокировка IP на 60 минут
     
     /**
+     * Логирование создания записи
+     */
+    public static function logCreate($module, $record_id, $description, $new_values = null, $client_info = null) {
+        return self::log('create', $module, $record_id, $description, null, $new_values, $client_info);
+    }
+    
+    /**
+     * Логирование обновления записи
+     */
+    public static function logUpdate($module, $record_id, $description, $old_values = null, $new_values = null, $client_info = null) {
+        return self::log('update', $module, $record_id, $description, $old_values, $new_values, $client_info);
+    }
+    
+    /**
+     * Логирование удаления записи
+     */
+    public static function logDelete($module, $record_id, $description, $old_values = null, $client_info = null) {
+        return self::log('delete', $module, $record_id, $description, $old_values, null, $client_info);
+    }
+    
+    /**
+     * Логирование просмотра записи
+     */
+    public static function logView($module, $record_id, $description, $client_info = null) {
+        return self::log('view', $module, $record_id, $description, null, null, $client_info);
+    }
+    
+    /**
+     * Логирование поиска
+     */
+    public static function logSearch($module, $description, $search_params = null, $client_info = null) {
+        return self::log('search', $module, null, $description, null, $search_params, $client_info);
+    }
+    
+    /**
      * Получение детальной информации о клиенте
      */
     public static function getClientInfo() {
@@ -507,20 +542,7 @@ class AuditSystem {
         global $conn;
         
         try {
-            $date_condition = "";
-            switch ($period) {
-                case 'today':
-                    $date_condition = "DATE(created_at) = CURDATE()";
-                    break;
-                case 'week':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-                    break;
-                case 'month':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-                    break;
-                default:
-                    $date_condition = "1=1";
-            }
+            $date_condition = self::getDateCondition($period);
             
             $sql = "
                 SELECT 
@@ -550,20 +572,7 @@ class AuditSystem {
         global $conn;
         
         try {
-            $date_condition = "";
-            switch ($period) {
-                case 'today':
-                    $date_condition = "DATE(created_at) = CURDATE()";
-                    break;
-                case 'week':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-                    break;
-                case 'month':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-                    break;
-                default:
-                    $date_condition = "1=1";
-            }
+            $date_condition = self::getDateCondition($period);
             
             $sql = "
                 SELECT 
@@ -597,20 +606,7 @@ class AuditSystem {
         global $conn;
         
         try {
-            $date_condition = "";
-            switch ($period) {
-                case 'today':
-                    $date_condition = "DATE(created_at) = CURDATE()";
-                    break;
-                case 'week':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-                    break;
-                case 'month':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-                    break;
-                default:
-                    $date_condition = "1=1";
-            }
+            $date_condition = self::getDateCondition($period);
             
             $sql = "
                 SELECT COUNT(*) as count
@@ -636,20 +632,7 @@ class AuditSystem {
         global $conn;
         
         try {
-            $date_condition = "";
-            switch ($period) {
-                case 'today':
-                    $date_condition = "DATE(created_at) = CURDATE()";
-                    break;
-                case 'week':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-                    break;
-                case 'month':
-                    $date_condition = "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-                    break;
-                default:
-                    $date_condition = "1=1";
-            }
+            $date_condition = self::getDateCondition($period);
             
             $sql = "
                 SELECT COUNT(*) as count
@@ -736,6 +719,72 @@ class AuditSystem {
             error_log("Error getting suspicious IPs: " . $e->getMessage());
             return [];
         }
+    }
+    
+    /**
+     * Получить условие WHERE для периода
+     */
+    private static function getDateCondition($period) {
+        switch ($period) {
+            case 'today':
+                return "DATE(created_at) = CURDATE()";
+            case 'week':
+                return "created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            case 'month':
+                return "created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            default:
+                return "1=1";
+        }
+    }
+    
+    /**
+     * Автоматическая очистка старых логов
+     */
+    public static function cleanupOldLogs($days = 90) {
+        global $conn;
+        
+        try {
+            $stmt = $conn->prepare("
+                DELETE FROM system_audit_log 
+                WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+            ");
+            $stmt->bind_param("i", $days);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Error cleaning old logs: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Статистика использования системы по пользователям
+     */
+    public static function getUserActivityStats($period = 'week') {
+        global $conn;
+        
+        $date_condition = self::getDateCondition($period);
+        
+        $sql = "
+            SELECT 
+                u.id,
+                u.login,
+                u.full_name,
+                u.role,
+                COUNT(al.id) as total_actions,
+                COUNT(DISTINCT DATE(al.created_at)) as active_days,
+                MAX(al.created_at) as last_activity
+            FROM users u
+            LEFT JOIN system_audit_log al ON u.id = al.user_id
+            WHERE {$date_condition}
+            GROUP BY u.id, u.login, u.full_name, u.role
+            ORDER BY total_actions DESC
+        ";
+        
+        $result = $conn->query($sql);
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 }
 ?>

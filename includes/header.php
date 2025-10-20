@@ -39,6 +39,15 @@ if (!isset($_SESSION)) {
                 <?php endif; ?>
             </ul>
             
+            <!-- Поиск в навбаре -->
+            <form class="d-flex me-3" action="../search/global.php" method="GET">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" placeholder="Поиск..." name="q" 
+                           style="width: 200px;" aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit">🔍</button>
+                </div>
+            </form>
+            
             <div class="navbar-nav">
                 <span class="navbar-text me-3">
                     <?php echo htmlspecialchars($_SESSION['user_name']); ?>
