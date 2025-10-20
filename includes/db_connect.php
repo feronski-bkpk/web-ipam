@@ -4,6 +4,8 @@ class Database {
     private $conn;
     
     public function __construct() {
+        // Устанавливаем московский часовой пояс для PHP
+        date_default_timezone_set('Europe/Moscow');
         $this->connect();
     }
     
@@ -20,6 +22,8 @@ class Database {
             throw new Exception("Ошибка подключения к базе данных");
         }
         
+        // Устанавливаем московский часовой пояс для MySQL
+        $this->conn->query("SET time_zone = '+03:00'");
         $this->conn->set_charset("utf8mb4");
     }
     

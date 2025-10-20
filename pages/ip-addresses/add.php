@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/auth.php';
 require_once '../../includes/db_connect.php';
+require_once '../../includes/audit_system.php';
 requireAuth();
 requireAnyRole(['admin', 'engineer']);
 
@@ -170,16 +171,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($insert_stmt->execute()) {
                 $new_ip_id = $insert_stmt->insert_id;
                 
-                // Логируем создание
-                require_once '../../includes/audit.php';
-                logIpAddressAction($new_ip_id, 'created', null, [
-                    'ip_address' => $ip_address,
-                    'subnet_id' => $subnet_id,
-                    'device_id' => $device_id,
-                    'type' => $type,
-                    'status' => $status,
-                    'description' => $description
-                ]);
+                // ЛОГИРУЕМ СОЗДАНИЕ В СИСТЕМЕ АУДИТА
+                AuditSystem::logCreate('ip_addresses', $new_ip_id, 
+                    "Добавлен IP-адрес: {$ip_address} (тип: {$type}, статус: {$status})", 
+                    [
+                        'ip_address' => $ip_address,
+                        'subnet_id' => $subnet_id,
+                        'device_id' => $device_id,
+                        'type' => $type,
+                        'status' => $status,
+                        'description' => $description
+                    ]
+                );
                 
                 $success = 'IP-адрес успешно добавлен';
                 // Очищаем форму после успешного сохранения

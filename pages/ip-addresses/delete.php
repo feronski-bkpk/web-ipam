@@ -1,7 +1,7 @@
 <?php
 require_once '../../includes/auth.php';
 require_once '../../includes/db_connect.php';
-require_once '../../includes/audit.php';
+require_once '../../includes/audit_system.php';
 requireAuth();
 requireRole('admin');
 
@@ -16,10 +16,11 @@ $ip_id = intval($_GET['id']);
 // Получаем данные IP-адреса перед удалением
 try {
     $ip_stmt = $conn->prepare("
-        SELECT ip.*, d.mac_address, c.full_name as client_name
+        SELECT ip.*, d.mac_address, c.full_name as client_name, s.network_address, s.cidr_mask
         FROM ip_addresses ip 
         LEFT JOIN devices d ON ip.device_id = d.id 
-        LEFT JOIN clients c ON d.client_id = c.id 
+        LEFT JOIN clients c ON d.client_id = c.id
+        LEFT JOIN subnets s ON ip.subnet_id = s.id
         WHERE ip.id = ?
     ");
     $ip_stmt->bind_param("i", $ip_id);
@@ -40,17 +41,20 @@ try {
 // Обработка подтверждения удаления
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // Логируем данные перед удалением
-        logIpAddressAction($ip_id, 'deleted', [
-            'ip_address' => $ip_data['ip_address'],
-            'subnet_id' => $ip_data['subnet_id'],
-            'device_id' => $ip_data['device_id'],
-            'type' => $ip_data['type'],
-            'status' => $ip_data['status'],
-            'description' => $ip_data['description'],
-            'mac_address' => $ip_data['mac_address'],
-            'client_name' => $ip_data['client_name']
-        ], null);
+        // ЛОГИРУЕМ УДАЛЕНИЕ В СИСТЕМЕ АУДИТА
+        AuditSystem::logDelete('ip_addresses', $ip_id, 
+            "Удален IP-адрес: {$ip_data['ip_address']} (подсеть: {$ip_data['network_address']}/{$ip_data['cidr_mask']})", 
+            [
+                'ip_address' => $ip_data['ip_address'],
+                'subnet_id' => $ip_data['subnet_id'],
+                'device_id' => $ip_data['device_id'],
+                'type' => $ip_data['type'],
+                'status' => $ip_data['status'],
+                'description' => $ip_data['description'],
+                'mac_address' => $ip_data['mac_address'],
+                'client_name' => $ip_data['client_name']
+            ]
+        );
         
         // Удаляем IP-адрес
         $delete_stmt = $conn->prepare("DELETE FROM ip_addresses WHERE id = ?");
@@ -104,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div class="alert alert-warning">
                             <h5>Вы уверены, что хотите удалить этот IP-адрес?</h5>
-                            <p>Это действие нельзя отменить.</p>
+                            <p>Это действие нельзя отменить. Все данные будут записаны в журнал аудита.</p>
                         </div>
 
                         <div class="card mb-3">
@@ -112,6 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <h6>Информация об IP-адресе:</h6>
                                 <table class="table table-sm">
                                     <tr><td><strong>IP-адрес:</strong></td><td><?php echo htmlspecialchars($ip_data['ip_address']); ?></td></tr>
+                                    <tr><td><strong>Подсеть:</strong></td><td><?php echo htmlspecialchars($ip_data['network_address'] . '/' . $ip_data['cidr_mask']); ?></td></tr>
                                     <tr><td><strong>Тип:</strong></td><td><?php echo $ip_data['type'] === 'white' ? 'Белый' : 'Серый'; ?></td></tr>
                                     <tr><td><strong>Статус:</strong></td><td><?php echo $ip_data['status'] === 'active' ? 'Активен' : ($ip_data['status'] === 'reserved' ? 'Зарезервирован' : 'Свободен'); ?></td></tr>
                                     <?php if ($ip_data['mac_address']): ?>
@@ -123,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?php if ($ip_data['description']): ?>
                                         <tr><td><strong>Описание:</strong></td><td><?php echo htmlspecialchars($ip_data['description']); ?></td></tr>
                                     <?php endif; ?>
+                                    <tr><td><strong>Создан:</strong></td><td><?php echo date('d.m.Y H:i', strtotime($ip_data['created_at'])); ?></td></tr>
                                 </table>
                             </div>
                         </div>

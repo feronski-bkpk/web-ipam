@@ -185,30 +185,33 @@ try {
         </div>
 
         <!-- Быстрое меню -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <h3>Быстрый доступ</h3>
-                <div class="d-grid gap-2 d-md-flex">
-                    <a href="pages/ip-addresses/list.php" class="btn btn-outline-primary me-2 mb-2">
-                        IP-адреса
-                    </a>
-                    <a href="pages/clients/list.php" class="btn btn-outline-success me-2 mb-2">
-                        Клиенты
-                    </a>
-                    <a href="pages/devices/list.php" class="btn btn-outline-warning me-2 mb-2">
-                        Устройства
-                    </a>
-                    <a href="pages/subnets/list.php" class="btn btn-outline-info me-2 mb-2">
-                        Подсети
-                    </a>
-                    <?php if (hasRole('admin')): ?>
-                        <a href="pages/users/list.php" class="btn btn-outline-danger mb-2">
-                            Пользователи
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
+<div class="row mt-5">
+    <div class="col-12">
+        <h3>Быстрый доступ</h3>
+        <div class="d-grid gap-2 d-md-flex">
+            <a href="pages/ip-addresses/list.php" class="btn btn-outline-primary me-2 mb-2">
+                📡 IP-адреса
+            </a>
+            <a href="pages/clients/list.php" class="btn btn-outline-success me-2 mb-2">
+                👥 Клиенты
+            </a>
+            <a href="pages/devices/list.php" class="btn btn-outline-warning me-2 mb-2">
+                🖧 Устройства
+            </a>
+            <a href="pages/subnets/list.php" class="btn btn-outline-info me-2 mb-2">
+                🌐 Подсети
+            </a>
+            <?php if (hasRole('admin')): ?>
+                <a href="pages/audit/list.php" class="btn btn-outline-dark me-2 mb-2">
+                    📋 Аудит
+                </a>
+                <a href="pages/users/list.php" class="btn btn-outline-danger mb-2">
+                    👤 Пользователи
+                </a>
+            <?php endif; ?>
         </div>
+    </div>
+</div>
 
         <div class="row mt-5">
             <div class="col-12">

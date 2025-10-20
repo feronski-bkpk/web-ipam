@@ -1,6 +1,7 @@
 <?php
 require_once '../../includes/auth.php';
 require_once '../../includes/db_connect.php';
+require_once '../../includes/audit_system.php';
 requireAuth();
 requireAnyRole(['admin', 'engineer']);
 
@@ -170,6 +171,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Если все проверки пройдены - сохраняем
     if (empty($errors)) {
         try {
+            // Сохраняем старые значения для аудита
+            $old_values = [
+                'ip_address' => $ip_data['ip_address'],
+                'subnet_id' => $ip_data['subnet_id'],
+                'device_id' => $ip_data['device_id'],
+                'type' => $ip_data['type'],
+                'status' => $ip_data['status'],
+                'description' => $ip_data['description']
+            ];
+            
             $update_stmt = $conn->prepare("
                 UPDATE ip_addresses 
                 SET ip_address = ?, subnet_id = ?, device_id = ?, type = ?, status = ?, description = ?, updated_at = CURRENT_TIMESTAMP
@@ -187,9 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             
             if ($update_stmt->execute()) {
-                // Логируем изменения
-                require_once '../../includes/audit.php';
-                
+                // ЛОГИРУЕМ ИЗМЕНЕНИЕ В СИСТЕМЕ АУДИТА
                 $changes = [];
                 if ($ip_data['ip_address'] != $ip_address) $changes['ip_address'] = $ip_address;
                 if ($ip_data['subnet_id'] != $subnet_id) $changes['subnet_id'] = $subnet_id;
@@ -199,14 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($ip_data['description'] != $description) $changes['description'] = $description;
                 
                 if (!empty($changes)) {
-                    logIpAddressAction($ip_id, 'updated', [
-                        'ip_address' => $ip_data['ip_address'],
-                        'subnet_id' => $ip_data['subnet_id'],
-                        'device_id' => $ip_data['device_id'],
-                        'type' => $ip_data['type'],
-                        'status' => $ip_data['status'],
-                        'description' => $ip_data['description']
-                    ], $changes);
+                    AuditSystem::logUpdate('ip_addresses', $ip_id, 
+                        "Изменен IP-адрес: {$ip_address}", 
+                        $old_values,
+                        [
+                            'ip_address' => $ip_address,
+                            'subnet_id' => $subnet_id,
+                            'device_id' => $device_id,
+                            'type' => $type,
+                            'status' => $status,
+                            'description' => $description
+                        ]
+                    );
                 }
                 
                 $success = 'IP-адрес успешно обновлен';
