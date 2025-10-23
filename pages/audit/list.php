@@ -60,7 +60,7 @@ $active_blocks = AuditSystem::getActiveBlocks();
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1>Журнал аудита системы</h1>
                     <div>
-                        <a href="export.php" class="btn btn-outline-success me-2">📊 Экспорт отчетов</a>
+                        <a href="export.php?<?php echo http_build_query($_GET); ?>" class="btn btn-outline-success me-2">📊 Экспорт отчетов</a>
                         <a href="security.php" class="btn btn-outline-warning">🛡️ Безопасность</a>
                     </div>
                 </div>

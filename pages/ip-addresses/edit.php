@@ -300,7 +300,7 @@ function getSubnetRange($network, $cidr) {
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1>Редактировать IP-адрес</h1>
-                    <a href="list.php" class="btn btn-outline-secondary">Назад к списку</a>
+                    <a href="list.php" class="btn btn-outline-secondary">← Назад к списку</a>
                 </div>
 
                 <?php if ($success): ?>
@@ -341,7 +341,7 @@ function getSubnetRange($network, $cidr) {
                                                     $display .= ' - ' . $subnet['description'];
                                                 }
                                             ?>
-                                                <option value="<?php echo $subnet['id']; ?>" <?php echo $selected; ?>>
+                                                <option value="<?php echo htmlspecialchars($subnet['id']); ?>" <?php echo $selected; ?>>
                                                     <?php echo htmlspecialchars($display); ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -367,7 +367,7 @@ function getSubnetRange($network, $cidr) {
                                                     $display .= ' (' . $device['client_name'] . ')';
                                                 }
                                             ?>
-                                                <option value="<?php echo $device['id']; ?>" <?php echo $selected; ?>>
+                                                <option value="<?php echo htmlspecialchars($device['id']); ?>" <?php echo $selected; ?>>
                                                     <?php echo htmlspecialchars($display); ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -418,7 +418,7 @@ function getSubnetRange($network, $cidr) {
                                     <div class="mb-3">
                                         <label for="description" class="form-label">Описание</label>
                                         <textarea class="form-control" id="description" name="description" 
-                                                  rows="3" placeholder="Дополнительная информация о IP-адресе"><?php echo htmlspecialchars($_POST['description'] ?? $ip_data['description']); ?></textarea>
+                                                  rows="3" placeholder="Дополнительная информация о IP-адресе"><?php echo htmlspecialchars($_POST['description'] ?? $ip_data['description'] ?? ''); ?></textarea>
                                     </div>
 
                                     <!-- Информация о записи -->
@@ -430,7 +430,7 @@ function getSubnetRange($network, $cidr) {
                                                 <?php if ($ip_data['updated_at'] && $ip_data['updated_at'] != $ip_data['created_at']): ?>
                                                     Обновлено: <?php echo date('d.m.Y H:i', strtotime($ip_data['updated_at'])); ?><br>
                                                 <?php endif; ?>
-                                                ID записи: <?php echo $ip_data['id']; ?>
+                                                ID записи: <?php echo htmlspecialchars($ip_data['id']); ?>
                                             </small>
                                         </div>
                                     </div>
@@ -439,8 +439,8 @@ function getSubnetRange($network, $cidr) {
 
                             <div class="row mt-4">
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                    <a href="list.php" class="btn btn-secondary">Отмена</a>
+                                    <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
+                                    <a href="list.php" class="btn btn-secondary">❌ Отмена</a>
                                 </div>
                             </div>
                         </form>
@@ -452,7 +452,7 @@ function getSubnetRange($network, $cidr) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Тот же JavaScript что и в add.php для валидации
+        // Динамическая валидация согласованности данных
         function validateFormConsistency() {
             const deviceId = document.getElementById('device_id').value;
             const status = document.getElementById('status').value;

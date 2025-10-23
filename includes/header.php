@@ -50,8 +50,8 @@ if (!isset($_SESSION)) {
             
             <div class="navbar-nav">
                 <span class="navbar-text me-3">
-                    <?php echo htmlspecialchars($_SESSION['user_name']); ?>
-                    <small class="text-muted">(<?php echo htmlspecialchars($_SESSION['user_role']); ?>)</small>
+                    <?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?>
+                    <small class="text-muted">(<?php echo htmlspecialchars($_SESSION['user_role'] ?? ''); ?>)</small>
                 </span>
                 <a class="nav-link" href="../../logout.php">🚪 Выйти</a>
             </div>

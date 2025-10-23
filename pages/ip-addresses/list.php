@@ -110,9 +110,12 @@ try {
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1>Управление IP-адресами</h1>
-                    <?php if (hasAnyRole(['admin', 'engineer'])): ?>
-                        <a href="add.php" class="btn btn-primary">Добавить IP-адрес</a>
-                    <?php endif; ?>
+                    <div>
+                        <?php if (hasAnyRole(['admin', 'engineer'])): ?>
+                            <a href="bulk_operations.php" class="btn btn-warning me-2">⚡ Массовые операции</a>
+                            <a href="add.php" class="btn btn-primary">➕ Добавить IP-адрес</a>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <?php if (isset($_SESSION['success_message'])): ?>
@@ -192,7 +195,7 @@ try {
                                         $selected = ($_GET['subnet'] ?? '') == $subnet['id'] ? 'selected' : '';
                                         $subnet_display = $subnet['network_address'] . '/' . $subnet['cidr_mask'];
                                     ?>
-                                        <option value="<?php echo $subnet['id']; ?>" <?php echo $selected; ?>>
+                                        <option value="<?php echo htmlspecialchars($subnet['id']); ?>" <?php echo $selected; ?>>
                                             <?php echo htmlspecialchars($subnet_display); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -252,7 +255,7 @@ try {
                                                 <td>
                                                     <small><?php echo htmlspecialchars($ip['network_address'] . '/' . $ip['cidr_mask']); ?></small>
                                                     <?php if ($ip['subnet_description']): ?>
-                                                        <br><small class="text-muted"><?php echo htmlspecialchars($ip['subnet_description']); ?></small>
+                                                        <br><small class="text-muted"><?php echo htmlspecialchars($ip['subnet_description'] ?? ''); ?></small>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td>
@@ -273,7 +276,7 @@ try {
                                                     <?php if ($ip['mac_address']): ?>
                                                         <code><?php echo htmlspecialchars($ip['mac_address']); ?></code>
                                                         <?php if ($ip['model']): ?>
-                                                            <br><small class="text-muted"><?php echo htmlspecialchars($ip['model']); ?></small>
+                                                            <br><small class="text-muted"><?php echo htmlspecialchars($ip['model'] ?? ''); ?></small>
                                                         <?php endif; ?>
                                                     <?php else: ?>
                                                         <span class="text-muted">—</span>
@@ -283,7 +286,7 @@ try {
                                                     <?php echo $ip['client_name'] ? htmlspecialchars($ip['client_name']) : '<span class="text-muted">—</span>'; ?>
                                                 </td>
                                                 <td>
-                                                    <?php echo $ip['description'] ? htmlspecialchars($ip['description']) : '<span class="text-muted">—</span>'; ?>
+                                                    <?php echo $ip['description'] ? htmlspecialchars($ip['description'] ?? '') : '<span class="text-muted">—</span>'; ?>
                                                 </td>
                                                 <td>
                                                     <small>
@@ -292,18 +295,18 @@ try {
                                                             <br><span class="text-muted" title="Обновлено: <?php echo date('d.m.Y H:i', strtotime($ip['updated_at'])); ?>">изм.</span>
                                                         <?php endif; ?>
                                                         <?php if ($ip['created_by_name']): ?>
-                                                            <br><span class="text-muted"><?php echo htmlspecialchars($ip['created_by_name']); ?></span>
+                                                            <br><span class="text-muted"><?php echo htmlspecialchars($ip['created_by_name'] ?? ''); ?></span>
                                                         <?php endif; ?>
                                                     </small>
                                                 </td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <a href="edit.php?id=<?php echo $ip['id']; ?>" class="btn btn-outline-primary" title="Редактировать">
+                                                        <a href="edit.php?id=<?php echo htmlspecialchars($ip['id']); ?>" class="btn btn-outline-primary" title="Редактировать">
                                                             ✏️
                                                         </a>
                                                         <?php if (hasRole('admin')): ?>
-                                                            <a href="delete.php?id=<?php echo $ip['id']; ?>" class="btn btn-outline-danger" 
-                                                               onclick="return confirm('Удалить IP-адрес <?php echo $ip['ip_address']; ?>?')" title="Удалить">
+                                                            <a href="delete.php?id=<?php echo htmlspecialchars($ip['id']); ?>" class="btn btn-outline-danger" 
+                                                               onclick="return confirm('Удалить IP-адрес <?php echo htmlspecialchars($ip['ip_address']); ?>?')" title="Удалить">
                                                                 🗑️
                                                             </a>
                                                         <?php endif; ?>
