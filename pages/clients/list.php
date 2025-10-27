@@ -34,6 +34,9 @@ switch ($sort) {
     case 'newest':
         $sql .= " ORDER BY created_at DESC";
         break;
+    case 'oldest':
+        $sql .= " ORDER BY created_at ASC";
+        break;
     case 'name_asc':
     default:
         $sql .= " ORDER BY full_name ASC";
@@ -51,6 +54,17 @@ try {
 } catch (Exception $e) {
     error_log("Error fetching clients: " . $e->getMessage());
     $clients = [];
+}
+
+// Получаем количество устройств для каждого клиента
+$client_devices = [];
+foreach ($clients as $client) {
+    $devices_stmt = $conn->prepare("SELECT COUNT(*) as device_count FROM devices WHERE client_id = ?");
+    $devices_stmt->bind_param("i", $client['id']);
+    $devices_stmt->execute();
+    $device_count = $devices_stmt->get_result()->fetch_assoc()['device_count'];
+    $devices_stmt->close();
+    $client_devices[$client['id']] = $device_count;
 }
 ?>
 
@@ -71,7 +85,9 @@ try {
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1>Управление клиентами</h1>
-                    <a href="add.php" class="btn btn-primary">Добавить клиента</a>
+                    <?php if (hasAnyRole(['admin', 'engineer'])): ?>
+                        <a href="add.php" class="btn btn-primary">Добавить клиента</a>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Поиск и фильтры -->
@@ -90,6 +106,7 @@ try {
                                     <option value="contract_asc" <?php echo $sort === 'contract_asc' ? 'selected' : ''; ?>>Договор ↑</option>
                                     <option value="contract_desc" <?php echo $sort === 'contract_desc' ? 'selected' : ''; ?>>Договор ↓</option>
                                     <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Сначала новые</option>
+                                    <option value="oldest" <?php echo $sort === 'oldest' ? 'selected' : ''; ?>>Сначала старые</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -125,12 +142,7 @@ try {
                                     </thead>
                                     <tbody>
                                         <?php foreach ($clients as $client): 
-                                            // Получаем количество устройств клиента
-                                            $devices_stmt = $conn->prepare("SELECT COUNT(*) as device_count FROM devices WHERE client_id = ?");
-                                            $devices_stmt->bind_param("i", $client['id']);
-                                            $devices_stmt->execute();
-                                            $device_count = $devices_stmt->get_result()->fetch_assoc()['device_count'];
-                                            $devices_stmt->close();
+                                            $device_count = $client_devices[$client['id']] ?? 0;
                                         ?>
                                             <tr>
                                                 <td>
@@ -153,11 +165,15 @@ try {
                                                 </td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <a href="edit.php?id=<?php echo $client['id']; ?>" class="btn btn-outline-primary">✏️</a>
-                                                        <a href="devices.php?id=<?php echo $client['id']; ?>" class="btn btn-outline-info" title="Устройства клиента">🖧</a>
+                                                        <a href="edit.php?id=<?php echo $client['id']; ?>" 
+                                                           class="btn btn-outline-primary" title="Редактировать клиента">✏️</a>
+                                                        <a href="../devices/list.php?client_id=<?php echo $client['id']; ?>" 
+                                                           class="btn btn-outline-info" title="Устройства клиента">🖧</a>
                                                         <?php if (hasRole('admin') && $device_count == 0): ?>
-                                                            <a href="delete.php?id=<?php echo $client['id']; ?>" class="btn btn-outline-danger" 
-                                                               onclick="return confirm('Удалить клиента <?php echo htmlspecialchars($client['full_name']); ?>?')">🗑️</a>
+                                                            <a href="delete.php?id=<?php echo $client['id']; ?>" 
+                                                               class="btn btn-outline-danger" 
+                                                               onclick="return confirm('Удалить клиента <?php echo htmlspecialchars($client['full_name']); ?>?')"
+                                                               title="Удалить клиента">🗑️</a>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
@@ -183,25 +199,15 @@ try {
                                     </div>
                                     <div class="col">
                                         <small class="text-muted">С устройствами</small>
-                                        <h5>
-                                            <?php
-                                            $with_devices = 0;
-                                            foreach ($clients as $client) {
-                                                $devices_stmt = $conn->prepare("SELECT COUNT(*) as count FROM devices WHERE client_id = ?");
-                                                $devices_stmt->bind_param("i", $client['id']);
-                                                $devices_stmt->execute();
-                                                if ($devices_stmt->get_result()->fetch_assoc()['count'] > 0) {
-                                                    $with_devices++;
-                                                }
-                                                $devices_stmt->close();
-                                            }
-                                            echo $with_devices;
-                                            ?>
-                                        </h5>
+                                        <h5><?php echo count(array_filter($client_devices, fn($count) => $count > 0)); ?></h5>
                                     </div>
                                     <div class="col">
                                         <small class="text-muted">Без устройств</small>
-                                        <h5><?php echo count($clients) - $with_devices; ?></h5>
+                                        <h5><?php echo count(array_filter($client_devices, fn($count) => $count == 0)); ?></h5>
+                                    </div>
+                                    <div class="col">
+                                        <small class="text-muted">Всего устройств</small>
+                                        <h5><?php echo array_sum($client_devices); ?></h5>
                                     </div>
                                 </div>
                             </div>

@@ -100,6 +100,33 @@ function createIPAddressesForSubnet($subnet_id, $network_range, $conn) {
     }
 }
 
+/**
+ * Пересоздание IP-адресов для подсети (при изменении)
+ */
+function recreateIPAddressesForSubnet($subnet_id, $network, $cidr, $conn) {
+    try {
+        // Удаляем старые IP-адреса
+        $delete_stmt = $conn->prepare("DELETE FROM ip_addresses WHERE subnet_id = ?");
+        $delete_stmt->bind_param("i", $subnet_id);
+        $delete_stmt->execute();
+        $deleted_count = $delete_stmt->affected_rows;
+        $delete_stmt->close();
+        
+        // Создаем новые IP-адреса
+        $network_range = calculateNetworkRange($network, $cidr);
+        $created_count = createIPAddressesForSubnet($subnet_id, $network_range, $conn);
+        
+        return [
+            'deleted' => $deleted_count,
+            'created' => $created_count
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error in recreateIPAddressesForSubnet: " . $e->getMessage());
+        return ['deleted' => 0, 'created' => 0];
+    }
+}
+
 // Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $network_address = trim($_POST['network_address'] ?? '');

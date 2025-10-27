@@ -2,11 +2,47 @@
 require_once '../../includes/auth.php';
 require_once '../../includes/db_connect.php';
 require_once '../../includes/audit_system.php';
+require_once '../../includes/pagination.php';
 requireAuth();
 
 $search = $_GET['search'] ?? '';
 $sort = $_GET['sort'] ?? 'network_asc';
 
+// Пагинация
+$current_page = max(1, intval($_GET['page'] ?? 1));
+$items_per_page = 10; // Ограничиваем для тестирования
+
+// Базовый запрос для подсчета
+$count_sql = "SELECT COUNT(*) as total FROM subnets WHERE 1=1";
+$count_params = [];
+$count_types = "";
+
+if (!empty($search)) {
+    $count_sql .= " AND (network_address LIKE ? OR description LIKE ? OR gateway LIKE ?)";
+    $search_param = "%$search%";
+    $count_params = array_merge($count_params, [$search_param, $search_param, $search_param]);
+    $count_types .= "sss";
+}
+
+// Получаем общее количество
+$total_items = 0;
+try {
+    $count_stmt = $conn->prepare($count_sql);
+    if (!empty($count_params)) {
+        $count_stmt->bind_param($count_types, ...$count_params);
+    }
+    $count_stmt->execute();
+    $count_result = $count_stmt->get_result()->fetch_assoc();
+    $total_items = $count_result['total'];
+    $count_stmt->close();
+} catch (Exception $e) {
+    error_log("Error counting subnets: " . $e->getMessage());
+}
+
+// Создаем пагинацию
+$pagination = new Pagination($total_items, $items_per_page, $current_page);
+
+// Основной запрос с пагинацией
 $sql = "SELECT * FROM subnets WHERE 1=1";
 $params = [];
 $types = "";
@@ -18,24 +54,31 @@ if (!empty($search)) {
     $types .= "sss";
 }
 
+// ПРАВИЛЬНАЯ сортировка
 switch ($sort) {
     case 'network_desc':
-        $sql .= " ORDER BY network_address DESC";
+        $sql .= " ORDER BY INET_ATON(network_address) DESC";
         break;
     case 'mask_asc':
-        $sql .= " ORDER BY cidr_mask ASC";
+        $sql .= " ORDER BY cidr_mask ASC, INET_ATON(network_address) ASC";
         break;
     case 'mask_desc':
-        $sql .= " ORDER BY cidr_mask DESC";
+        $sql .= " ORDER BY cidr_mask DESC, INET_ATON(network_address) ASC";
         break;
     case 'newest':
         $sql .= " ORDER BY created_at DESC";
         break;
+    case 'oldest':
+        $sql .= " ORDER BY created_at ASC";
+        break;
     case 'network_asc':
     default:
-        $sql .= " ORDER BY network_address ASC";
+        $sql .= " ORDER BY INET_ATON(network_address) ASC";
         break;
 }
+
+// Добавляем пагинацию
+$sql .= " " . $pagination->getLimit();
 
 try {
     $stmt = $conn->prepare($sql);
@@ -70,6 +113,9 @@ foreach ($subnets as &$subnet) {
     $subnet['stats'] = $stats;
     $subnet['usage_percent'] = $stats['total_ips'] > 0 ? round(($stats['active_ips'] / $stats['total_ips']) * 100, 1) : 0;
 }
+
+// Генерируем URL для пагинации
+$pagination_url = '?' . http_build_query(array_merge($_GET, ['page' => '{page}']));
 ?>
 
 <!DOCTYPE html>
@@ -92,6 +138,22 @@ foreach ($subnets as &$subnet) {
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Информация о пагинации -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <span>
+                        Показано <strong><?php echo count($subnets); ?></strong> из 
+                        <strong><?php echo $total_items; ?></strong> подсетей
+                    </span>
+                    <span>
+                        Страница <strong><?php echo $pagination->getCurrentPage(); ?></strong> из 
+                        <strong><?php echo $pagination->getTotalPages(); ?></strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -117,10 +179,11 @@ foreach ($subnets as &$subnet) {
                                     <option value="mask_asc" <?php echo $sort === 'mask_asc' ? 'selected' : ''; ?>>Маска ↑</option>
                                     <option value="mask_desc" <?php echo $sort === 'mask_desc' ? 'selected' : ''; ?>>Маска ↓</option>
                                     <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Сначала новые</option>
+                                    <option value="oldest" <?php echo $sort === 'oldest' ? 'selected' : ''; ?>>Сначала старые</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">Поиск</button>
+                                <button type="submit" class="btn btn-primary w-100">Применить</button>
                             </div>
                         </form>
                     </div>
@@ -158,7 +221,7 @@ foreach ($subnets as &$subnet) {
                                             <tr>
                                                 <td>
                                                     <code><?php echo htmlspecialchars($subnet['network_address']); ?>/<?php echo $subnet['cidr_mask']; ?></code>
-                                                    <br><small class="text-muted"><?php echo $subnet['cidr_mask']; ?> бит</small>
+                                                    <br><small class="text-muted">/<?php echo $subnet['cidr_mask']; ?></small>
                                                 </td>
                                                 <td>
                                                     <?php if ($subnet['gateway']): ?>
@@ -195,13 +258,17 @@ foreach ($subnets as &$subnet) {
                                                 </td>
                                                 <td>
                                                     <div class="btn-group btn-group-sm">
-                                                        <a href="view.php?id=<?php echo $subnet['id']; ?>" class="btn btn-outline-info" title="Просмотр">👁️</a>
+                                                        <a href="view.php?id=<?php echo $subnet['id']; ?>" 
+                                                           class="btn btn-outline-info" title="Просмотр подсети">👁️</a>
                                                         <?php if (hasAnyRole(['admin', 'engineer'])): ?>
-                                                            <a href="edit.php?id=<?php echo $subnet['id']; ?>" class="btn btn-outline-primary">✏️</a>
+                                                            <a href="edit.php?id=<?php echo $subnet['id']; ?>" 
+                                                               class="btn btn-outline-primary" title="Редактировать подсеть">✏️</a>
                                                         <?php endif; ?>
                                                         <?php if (hasRole('admin') && $subnet['stats']['total_ips'] == 0): ?>
-                                                            <a href="delete.php?id=<?php echo $subnet['id']; ?>" class="btn btn-outline-danger" 
-                                                               onclick="return confirm('Удалить подсеть <?php echo htmlspecialchars($subnet['network_address']); ?>/<?php echo $subnet['cidr_mask']; ?>?')">🗑️</a>
+                                                            <a href="delete.php?id=<?php echo $subnet['id']; ?>" 
+                                                               class="btn btn-outline-danger" 
+                                                               onclick="return confirm('Удалить подсеть <?php echo htmlspecialchars($subnet['network_address']); ?>/<?php echo $subnet['cidr_mask']; ?>?')"
+                                                               title="Удалить подсеть">🗑️</a>
                                                         <?php endif; ?>
                                                     </div>
                                                 </td>
@@ -214,6 +281,15 @@ foreach ($subnets as &$subnet) {
                     </div>
                 </div>
 
+                <!-- Пагинация -->
+                <?php if ($pagination->getTotalPages() > 1): ?>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <?php echo $pagination->render($pagination_url); ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- Статистика -->
                 <div class="row mt-4">
                     <div class="col-md-12">
@@ -223,7 +299,7 @@ foreach ($subnets as &$subnet) {
                                 <div class="row text-center">
                                     <div class="col">
                                         <small class="text-muted">Всего подсетей</small>
-                                        <h5><?php echo count($subnets); ?></h5>
+                                        <h5><?php echo $total_items; ?></h5>
                                     </div>
                                     <div class="col">
                                         <small class="text-muted">Всего IP</small>

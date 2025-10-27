@@ -1,5 +1,6 @@
 <?php
 // includes/header.php
+require_once 'csrf.php';
 if (!isset($_SESSION)) {
     session_start();
 }
