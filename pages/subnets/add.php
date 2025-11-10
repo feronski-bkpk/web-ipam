@@ -8,7 +8,7 @@ requireAnyRole(['admin', 'engineer']);
 $errors = [];
 $success = '';
 
-// Функции для работы с подсетями
+// Функции для работы с подсетями (остаются без изменений)
 function isValidIP($ip) {
     return filter_var($ip, FILTER_VALIDATE_IP);
 }
@@ -27,7 +27,7 @@ function calculateNetworkRange($network, $cidr) {
     return [
         'start' => long2ip($network_start),
         'end' => long2ip($network_end),
-        'total_ips' => pow(2, (32 - $cidr)) - 2, // минус сеть и широковещательный
+        'total_ips' => pow(2, (32 - $cidr)) - 2,
         'network' => long2ip($network_start),
         'broadcast' => long2ip($network_end)
     ];
@@ -54,7 +54,6 @@ function checkSubnetOverlap($network, $cidr, $conn) {
         $existing_start = $existing_network_long & $existing_mask;
         $existing_end = $existing_start + pow(2, (32 - $existing['cidr_mask'])) - 1;
         
-        // Проверка пересечения диапазонов
         if (($network_start >= $existing_start && $network_start <= $existing_end) ||
             ($network_end >= $existing_start && $network_end <= $existing_end) ||
             ($existing_start >= $network_start && $existing_start <= $network_end)) {
@@ -65,21 +64,16 @@ function checkSubnetOverlap($network, $cidr, $conn) {
     return null;
 }
 
-/**
- * Автоматическое создание IP-адресов для подсети
- */
 function createIPAddressesForSubnet($subnet_id, $network_range, $conn) {
     $network_long = ip2long($network_range['network']);
     $broadcast_long = ip2long($network_range['broadcast']);
     
-    // Пропускаем первый IP (сеть) и последний (широковещательный)
     $start_ip = $network_long + 1;
     $end_ip = $broadcast_long - 1;
     
     $created_count = 0;
     
     try {
-        // Используем подготовленные statement для безопасности
         $stmt = $conn->prepare("INSERT INTO ip_addresses (ip_address, subnet_id, type, status) VALUES (?, ?, 'gray', 'free')");
         
         for ($ip_long = $start_ip; $ip_long <= $end_ip; $ip_long++) {
@@ -100,34 +94,7 @@ function createIPAddressesForSubnet($subnet_id, $network_range, $conn) {
     }
 }
 
-/**
- * Пересоздание IP-адресов для подсети (при изменении)
- */
-function recreateIPAddressesForSubnet($subnet_id, $network, $cidr, $conn) {
-    try {
-        // Удаляем старые IP-адреса
-        $delete_stmt = $conn->prepare("DELETE FROM ip_addresses WHERE subnet_id = ?");
-        $delete_stmt->bind_param("i", $subnet_id);
-        $delete_stmt->execute();
-        $deleted_count = $delete_stmt->affected_rows;
-        $delete_stmt->close();
-        
-        // Создаем новые IP-адреса
-        $network_range = calculateNetworkRange($network, $cidr);
-        $created_count = createIPAddressesForSubnet($subnet_id, $network_range, $conn);
-        
-        return [
-            'deleted' => $deleted_count,
-            'created' => $created_count
-        ];
-        
-    } catch (Exception $e) {
-        error_log("Error in recreateIPAddressesForSubnet: " . $e->getMessage());
-        return ['deleted' => 0, 'created' => 0];
-    }
-}
-
-// Обработка формы
+// Обработка формы (остается без изменений)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $network_address = trim($_POST['network_address'] ?? '');
     $cidr_mask = intval($_POST['cidr_mask'] ?? 24);
@@ -236,38 +203,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить подсеть - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Добавление подсети</h1>
+                        <p class="text-muted mb-0">Создание новой подсети в системе</p>
+                    </div>
+                    <div>
+                        <a href="list.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
-                        <li class="breadcrumb-item"><a href="list.php">Подсети</a></li>
-                        <li class="breadcrumb-item active">Добавить подсеть</li>
-                    </ol>
-                </nav>
+            <div class="col-lg-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="card">
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-plus-circle me-2"></i>Новая подсеть
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Добавить новую подсеть</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="" id="subnet-form">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="network_address" class="form-label">Адрес сети *</label>
+                                        <label for="network_address" class="form-label">Адрес сети <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control <?php echo isset($errors['network_address']) ? 'is-invalid' : ''; ?>" 
                                                id="network_address" name="network_address" 
                                                value="<?php echo htmlspecialchars($_POST['network_address'] ?? ''); ?>" 
@@ -281,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="cidr_mask" class="form-label">Маска подсети (CIDR) *</label>
+                                        <label for="cidr_mask" class="form-label">Маска подсети (CIDR) <span class="text-danger">*</span></label>
                                         <select class="form-select <?php echo isset($errors['cidr_mask']) ? 'is-invalid' : ''; ?>" 
                                                 id="cidr_mask" name="cidr_mask" required>
                                             <?php for ($i = 8; $i <= 30; $i++): ?>
@@ -310,16 +301,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="form-text">Обычно первый usable IP в подсети</div>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label for="description" class="form-label">Описание</label>
                                 <textarea class="form-control" id="description" name="description" 
                                           rows="3" placeholder="Описание назначения подсети"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                             </div>
 
                             <!-- Предварительный расчет -->
-                            <div class="card bg-light mb-3" id="range-preview">
-                                <div class="card-header">
-                                    <h6 class="card-title mb-0">Предварительный расчет</h6>
+                            <div class="card stat-card mb-4">
+                                <div class="card-header bg-transparent">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-calculator me-2"></i>Предварительный расчет
+                                    </h6>
                                 </div>
                                 <div class="card-body">
                                     <div id="range-info" class="text-muted">
@@ -328,18 +321,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">➕ Добавить подсеть</button>
-                                <a href="list.php" class="btn btn-secondary">❌ Отмена</a>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="list.php" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Добавить подсеть
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
                 <!-- Справка по подсетям -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Справка по подсетям</h5>
+                <div class="card stat-card mt-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Справка по подсетям
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -377,7 +376,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (!network || !cidr) return;
             
-            // Простая валидация IP (на клиенте)
             const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
             if (!ipRegex.test(network)) {
                 document.getElementById('range-info').innerHTML = 
@@ -385,7 +383,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            // Отправляем запрос на сервер для расчета
             fetch('calculate_range.php', {
                 method: 'POST',
                 headers: {
@@ -397,10 +394,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .then(data => {
                 if (data.success) {
                     document.getElementById('range-info').innerHTML = `
-                        <strong>Диапазон:</strong> ${data.range.start} - ${data.range.end}<br>
-                        <strong>Используемых IP:</strong> ${data.range.total_ips}<br>
-                        <strong>Адрес сети:</strong> ${data.range.network}<br>
-                        <strong>Широковещательный:</strong> ${data.range.broadcast}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Диапазон:</strong><br>
+                                <code>${data.range.start} - ${data.range.end}</code>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Используемых IP:</strong> ${data.range.total_ips}<br>
+                                <strong>Адрес сети:</strong> ${data.range.network}<br>
+                                <strong>Широковещательный:</strong> ${data.range.broadcast}
+                            </div>
+                        </div>
                     `;
                 } else {
                     document.getElementById('range-info').innerHTML = 
@@ -413,11 +417,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         }
 
-        // Слушатели изменений
         document.getElementById('network_address').addEventListener('input', calculateRange);
         document.getElementById('cidr_mask').addEventListener('change', calculateRange);
 
-        // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             calculateRange();
         });

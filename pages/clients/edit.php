@@ -34,6 +34,13 @@ try {
     exit();
 }
 
+// Получаем количество устройств клиента
+$devices_stmt = $conn->prepare("SELECT COUNT(*) as device_count FROM devices WHERE client_id = ?");
+$devices_stmt->bind_param("i", $client_id);
+$devices_stmt->execute();
+$device_count = $devices_stmt->get_result()->fetch_assoc()['device_count'];
+$devices_stmt->close();
+
 // Обработка формы
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contract_number = trim($_POST['contract_number'] ?? '');
@@ -144,13 +151,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактировать клиента - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 mx-auto">
+        <!-- Заголовок и навигация -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
@@ -159,30 +169,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </ol>
                 </nav>
 
-                <div class="card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Редактировать клиента</h1>
+                        <p class="text-muted mb-0">Изменение данных клиентской записи</p>
+                    </div>
+                    <a href="list.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pencil me-2"></i>Форма редактирования клиента
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Редактировать клиента</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="contract_number" class="form-label">Номер договора *</label>
+                                        <label for="contract_number" class="form-label">Номер договора <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control <?php echo isset($errors['contract_number']) ? 'is-invalid' : ''; ?>" 
                                                id="contract_number" name="contract_number" 
                                                value="<?php echo htmlspecialchars($_POST['contract_number'] ?? $client_data['contract_number']); ?>" 
-                                               required maxlength="20">
+                                               required maxlength="20"
+                                               placeholder="ДГ-2024-001">
                                         <?php if (isset($errors['contract_number'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['contract_number']); ?></div>
                                         <?php endif; ?>
+                                        <div class="form-text">Уникальный номер договора</div>
                                     </div>
                                 </div>
                                 
@@ -192,58 +231,120 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input type="text" class="form-control <?php echo isset($errors['phone']) ? 'is-invalid' : ''; ?>" 
                                                id="phone" name="phone" 
                                                value="<?php echo htmlspecialchars($_POST['phone'] ?? $client_data['phone']); ?>" 
-                                               maxlength="20" placeholder="+7 (900) 123-45-67">
+                                               maxlength="20" 
+                                               placeholder="+7 (900) 123-45-67">
                                         <?php if (isset($errors['phone'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['phone']); ?></div>
                                         <?php endif; ?>
+                                        <div class="form-text">Необязательное поле</div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="full_name" class="form-label">ФИО клиента *</label>
+                                <label for="full_name" class="form-label">ФИО клиента <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control <?php echo isset($errors['full_name']) ? 'is-invalid' : ''; ?>" 
                                        id="full_name" name="full_name" 
                                        value="<?php echo htmlspecialchars($_POST['full_name'] ?? $client_data['full_name']); ?>" 
-                                       required maxlength="100">
+                                       required maxlength="100"
+                                       placeholder="Иванов Иван Иванович">
                                 <?php if (isset($errors['full_name'])): ?>
                                     <div class="invalid-feedback"><?php echo htmlspecialchars($errors['full_name']); ?></div>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Адрес подключения *</label>
+                            <div class="mb-4">
+                                <label for="address" class="form-label">Адрес подключения <span class="text-danger">*</span></label>
                                 <textarea class="form-control <?php echo isset($errors['address']) ? 'is-invalid' : ''; ?>" 
                                           id="address" name="address" rows="3" 
-                                          required maxlength="255"><?php echo htmlspecialchars($_POST['address'] ?? $client_data['address']); ?></textarea>
+                                          required maxlength="255"
+                                          placeholder="г. Москва, ул. Примерная, д. 1, кв. 1"><?php echo htmlspecialchars($_POST['address'] ?? $client_data['address']); ?></textarea>
                                 <?php if (isset($errors['address'])): ?>
                                     <div class="invalid-feedback"><?php echo htmlspecialchars($errors['address']); ?></div>
                                 <?php endif; ?>
+                                <div class="form-text">Полный адрес подключения услуг</div>
                             </div>
 
                             <!-- Информация о записи -->
-                            <div class="card bg-light mb-3">
+                            <div class="card bg-light mb-4">
                                 <div class="card-body">
-                                    <small class="text-muted">
-                                        <strong>Информация о записи:</strong><br>
-                                        Создан: <?php echo date('d.m.Y H:i', strtotime($client_data['created_at'])); ?><br>
-                                        <?php if ($client_data['updated_at'] && $client_data['updated_at'] != $client_data['created_at']): ?>
-                                            Обновлен: <?php echo date('d.m.Y H:i', strtotime($client_data['updated_at'])); ?><br>
-                                        <?php endif; ?>
-                                        ID записи: <?php echo $client_data['id']; ?>
-                                    </small>
+                                    <h6 class="text-primary mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>Информация о записи
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar me-1"></i>Создан: <?php echo date('d.m.Y H:i', strtotime($client_data['created_at'])); ?>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <?php if ($client_data['updated_at'] && $client_data['updated_at'] != $client_data['created_at']): ?>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-arrow-clockwise me-1"></i>Обновлен: <?php echo date('d.m.Y H:i', strtotime($client_data['updated_at'])); ?>
+                                                </small>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <i class="bi bi-hdd me-1"></i>Устройств: 
+                                                <span class="badge bg-<?php echo $device_count > 0 ? 'info' : 'secondary'; ?>">
+                                                    <?php echo $device_count; ?>
+                                                </span>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <i class="bi bi-hash me-1"></i>ID: <?php echo htmlspecialchars($client_data['id']); ?>
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                <a href="list.php" class="btn btn-secondary">Отмена</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                                </button>
+                                <a href="list.php" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- Быстрые действия -->
+                <div class="card stat-card mt-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightning me-2"></i>Быстрые действия
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <a href="../devices/list.php?client_id=<?php echo htmlspecialchars($client_id); ?>" 
+                                   class="btn btn-outline-info w-100 d-flex align-items-center justify-content-center py-2">
+                                    <i class="bi bi-hdd me-2"></i>
+                                    <span>Устройства клиента</span>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="../devices/add.php?client_id=<?php echo htmlspecialchars($client_id); ?>" 
+                                   class="btn btn-outline-success w-100 d-flex align-items-center justify-content-center py-2">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    <span>Добавить устройство</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

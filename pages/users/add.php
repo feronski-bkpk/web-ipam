@@ -107,38 +107,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить пользователя - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Добавление пользователя</h1>
+                        <p class="text-muted mb-0">Создание нового пользователя системы</p>
+                    </div>
+                    <div>
+                        <a href="list.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
-                        <li class="breadcrumb-item"><a href="list.php">Пользователи</a></li>
-                        <li class="breadcrumb-item active">Добавить пользователя</li>
-                    </ol>
-                </nav>
+            <div class="col-lg-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="card">
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-person-plus me-2"></i>Новый пользователь
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Добавить нового пользователя</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="" id="user-form">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="login" class="form-label">Логин *</label>
+                                        <label for="login" class="form-label">Логин <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control <?php echo isset($errors['login']) ? 'is-invalid' : ''; ?>" 
                                                id="login" name="login" 
                                                value="<?php echo htmlspecialchars($_POST['login'] ?? ''); ?>" 
@@ -152,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="role" class="form-label">Роль *</label>
+                                        <label for="role" class="form-label">Роль <span class="text-danger">*</span></label>
                                         <select class="form-select <?php echo isset($errors['role']) ? 'is-invalid' : ''; ?>" 
                                                 id="role" name="role" required>
                                             <option value="operator" <?php echo ($_POST['role'] ?? '') === 'operator' ? 'selected' : ''; ?>>Оператор</option>
@@ -167,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="mb-3">
-                                <label for="full_name" class="form-label">ФИО *</label>
+                                <label for="full_name" class="form-label">ФИО <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control <?php echo isset($errors['full_name']) ? 'is-invalid' : ''; ?>" 
                                        id="full_name" name="full_name" 
                                        value="<?php echo htmlspecialchars($_POST['full_name'] ?? ''); ?>" 
@@ -180,10 +204,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="password" class="form-label">Пароль *</label>
-                                        <input type="password" class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>" 
-                                               id="password" name="password" 
-                                               required minlength="6">
+                                        <label for="password" class="form-label">Пароль <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>" 
+                                                   id="password" name="password" 
+                                                   required minlength="6">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
                                         <?php if (isset($errors['password'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['password']); ?></div>
                                         <?php endif; ?>
@@ -193,10 +222,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="password_confirm" class="form-label">Подтверждение пароля *</label>
-                                        <input type="password" class="form-control <?php echo isset($errors['password_confirm']) ? 'is-invalid' : ''; ?>" 
-                                               id="password_confirm" name="password_confirm" 
-                                               required minlength="6">
+                                        <label for="password_confirm" class="form-label">Подтверждение пароля <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control <?php echo isset($errors['password_confirm']) ? 'is-invalid' : ''; ?>" 
+                                                   id="password_confirm" name="password_confirm" 
+                                                   required minlength="6">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirm')">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
                                         <?php if (isset($errors['password_confirm'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['password_confirm']); ?></div>
                                         <?php endif; ?>
@@ -204,23 +238,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">Добавить пользователя</button>
-                                <a href="list.php" class="btn btn-secondary">Отмена</a>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="list.php" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus me-1"></i>Добавить пользователя
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
                 <!-- Справка по ролям -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Описание ролей</h5>
+                <div class="card stat-card mt-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Описание ролей
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4">
-                                <h6 class="text-danger">Администратор</h6>
+                                <h6 class="text-danger">
+                                    <i class="bi bi-shield-check me-1"></i>Администратор
+                                </h6>
                                 <ul class="text-muted small">
                                     <li>Полный доступ ко всем функциям</li>
                                     <li>Управление пользователями</li>
@@ -229,7 +271,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </ul>
                             </div>
                             <div class="col-md-4">
-                                <h6 class="text-warning">Инженер</h6>
+                                <h6 class="text-warning">
+                                    <i class="bi bi-tools me-1"></i>Инженер
+                                </h6>
                                 <ul class="text-muted small">
                                     <li>Управление IP-адресами</li>
                                     <li>Управление клиентами и устройствами</li>
@@ -238,7 +282,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </ul>
                             </div>
                             <div class="col-md-4">
-                                <h6 class="text-info">Оператор</h6>
+                                <h6 class="text-info">
+                                    <i class="bi bi-eye me-1"></i>Оператор
+                                </h6>
                                 <ul class="text-muted small">
                                     <li>Просмотр информации</li>
                                     <li>Ограниченное редактирование IP</li>
@@ -255,6 +301,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = field.parentNode.querySelector('.bi');
+            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+            field.setAttribute('type', type);
+            
+            if (type === 'text') {
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+
         // Валидация паролей на клиенте
         document.getElementById('user-form').addEventListener('submit', function(e) {
             const password = document.getElementById('password').value;
@@ -266,13 +327,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 document.getElementById('password_confirm').focus();
             }
         });
-
-        // Показать/скрыть пароль
-        function togglePasswordVisibility(fieldId) {
-            const field = document.getElementById(fieldId);
-            const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-            field.setAttribute('type', type);
-        }
     </script>
 </body>
 </html>

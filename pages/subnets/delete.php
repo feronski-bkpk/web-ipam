@@ -111,86 +111,136 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Удалить подсеть - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Удаление подсети</h1>
+                        <p class="text-muted mb-0">Подтверждение удаления подсети из системы</p>
+                    </div>
+                    <div>
+                        <a href="list.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
-                        <li class="breadcrumb-item"><a href="list.php">Подсети</a></li>
-                        <li class="breadcrumb-item active">Удалить подсеть</li>
-                    </ol>
-                </nav>
+            <div class="col-lg-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($error); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="card">
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-trash me-2"></i>Подтверждение удаления
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Подтверждение удаления</h4>
-                        
-                        <?php if (isset($error)): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
-                        <?php endif; ?>
-
                         <?php if ($ip_count > 0): ?>
                             <div class="alert alert-warning">
-                                <h5>⚠️ Внимание! В подсети имеются IP-адреса</h5>
-                                <p>Удаление подсети приведет к удалению всех связанных IP-адресов.</p>
-                                <div class="mt-3">
+                                <h5 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Внимание! В подсети имеются IP-адреса
+                                </h5>
+                                <p class="mb-3">Удаление подсети приведет к удалению всех связанных IP-адресов.</p>
+                                
+                                <div class="mb-3">
                                     <strong>Статистика IP-адресов:</strong>
-                                    <ul class="mb-3">
-                                        <li>Всего IP-адресов: <strong><?php echo $ip_count; ?></strong></li>
-                                        <li>Активных IP-адресов: <strong class="text-danger"><?php echo $active_ip_count; ?></strong></li>
-                                        <li>Свободных IP-адресов: <strong><?php echo $ip_count - $active_ip_count; ?></strong></li>
-                                    </ul>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="force_delete" value="1" id="forceDelete">
-                                        <label class="form-check-label text-danger fw-bold" for="forceDelete">
-                                            Я понимаю, что все IP-адреса будут удалены, включая активные
-                                        </label>
+                                    <div class="row mt-2">
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center py-2">
+                                                    <div class="h5 mb-0"><?php echo $ip_count; ?></div>
+                                                    <small class="text-muted">Всего IP-адресов</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-danger text-white">
+                                                <div class="card-body text-center py-2">
+                                                    <div class="h5 mb-0"><?php echo $active_ip_count; ?></div>
+                                                    <small>Активных IP-адресов</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body text-center py-2">
+                                                    <div class="h5 mb-0"><?php echo $ip_count - $active_ip_count; ?></div>
+                                                    <small>Свободных IP-адресов</small>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="force_delete" value="1" id="forceDelete">
+                                    <label class="form-check-label text-danger fw-bold" for="forceDelete">
+                                        Я понимаю, что все IP-адреса будут удалены, включая активные
+                                    </label>
                                 </div>
                             </div>
                         <?php else: ?>
                             <div class="alert alert-warning">
-                                <h5>Вы уверены, что хотите удалить эту подсеть?</h5>
-                                <p>Это действие нельзя отменить. Все данные будут записаны в журнал аудита.</p>
+                                <h5 class="alert-heading">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Вы уверены, что хотите удалить эту подсеть?
+                                </h5>
+                                <p class="mb-0">Это действие нельзя отменить. Все данные будут записаны в журнал аудита.</p>
                             </div>
                         <?php endif; ?>
 
-                        <div class="card mb-3">
+                        <!-- Информация о подсети -->
+                        <div class="card stat-card mb-4">
+                            <div class="card-header bg-transparent">
+                                <h6 class="card-title mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>Информация о подсети
+                                </h6>
+                            </div>
                             <div class="card-body">
-                                <h6>Информация о подсети:</h6>
-                                <table class="table table-sm">
-                                    <tr>
-                                        <td><strong>Подсеть:</strong></td>
-                                        <td><code><?php echo htmlspecialchars($subnet_data['network_address']); ?>/<?php echo $subnet_data['cidr_mask']; ?></code></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Шлюз:</strong></td>
-                                        <td><?php echo $subnet_data['gateway'] ? htmlspecialchars($subnet_data['gateway']) : '—'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Описание:</strong></td>
-                                        <td><?php echo $subnet_data['description'] ? htmlspecialchars($subnet_data['description']) : '—'; ?></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>IP-адресов:</strong></td>
-                                        <td>
-                                            <?php if ($ip_count > 0): ?>
-                                                <span class="text-danger fw-bold"><?php echo $ip_count; ?> (<?php echo $active_ip_count; ?> активных)</span>
-                                            <?php else: ?>
-                                                <span class="text-success">0</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Создана:</strong></td>
-                                        <td><?php echo date('d.m.Y H:i', strtotime($subnet_data['created_at'])); ?></td>
-                                    </tr>
-                                </table>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <table class="table table-sm table-borderless">
+                                            <tr>
+                                                <td><strong>Подсеть:</strong></td>
+                                                <td><code><?php echo htmlspecialchars($subnet_data['network_address']); ?>/<?php echo $subnet_data['cidr_mask']; ?></code></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Шлюз:</strong></td>
+                                                <td><?php echo $subnet_data['gateway'] ? htmlspecialchars($subnet_data['gateway']) : '<span class="text-muted">—</span>'; ?></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <table class="table table-sm table-borderless">
+                                            <tr>
+                                                <td><strong>Описание:</strong></td>
+                                                <td><?php echo $subnet_data['description'] ? htmlspecialchars($subnet_data['description']) : '<span class="text-muted">—</span>'; ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Создана:</strong></td>
+                                                <td><?php echo date('d.m.Y H:i', strtotime($subnet_data['created_at'])); ?></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -199,16 +249,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="hidden" name="force_delete" id="forceDeleteHidden" value="0">
                             <?php endif; ?>
                             
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="list.php" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
                                 <button type="submit" class="btn btn-danger" id="delete-button" 
                                     <?php if ($ip_count > 0) echo 'disabled'; ?>>
+                                    <i class="bi bi-trash me-1"></i>
                                     <?php if ($ip_count > 0): ?>
-                                        🗑️ Удалить подсеть и все IP-адреса
+                                        Удалить подсеть и все IP-адреса
                                     <?php else: ?>
-                                        🗑️ Удалить подсеть
+                                        Удалить подсеть
                                     <?php endif; ?>
                                 </button>
-                                <a href="list.php" class="btn btn-secondary">❌ Отмена</a>
                             </div>
                         </form>
                     </div>

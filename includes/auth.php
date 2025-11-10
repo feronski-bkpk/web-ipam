@@ -5,9 +5,21 @@ session_start();
 // Таймаут сессии - 1 час
 const SESSION_TIMEOUT = 3600;
 
+// Инициализация сессионных переменных если их нет
+function initSessionVars() {
+    $_SESSION['user_id'] = $_SESSION['user_id'] ?? null;
+    $_SESSION['user_login'] = $_SESSION['user_login'] ?? '';
+    $_SESSION['user_name'] = $_SESSION['user_name'] ?? '';
+    $_SESSION['user_role'] = $_SESSION['user_role'] ?? '';
+    $_SESSION['login_time'] = $_SESSION['login_time'] ?? 0;
+    $_SESSION['csrf_token'] = $_SESSION['csrf_token'] ?? '';
+}
+
 // Функция для проверки авторизации с таймаутом
 function isLoggedIn() {
-    if (!isset($_SESSION['user_id']) || !isset($_SESSION['login_time'])) {
+    initSessionVars();
+    
+    if (!$_SESSION['user_id'] || !$_SESSION['login_time']) {
         return false;
     }
     
@@ -26,13 +38,13 @@ function isLoggedIn() {
 // Функция для проверки роли пользователя
 function hasRole($requiredRole) {
     if (!isLoggedIn()) return false;
-    return $_SESSION['user_role'] === $requiredRole;
+    return ($_SESSION['user_role'] ?? '') === $requiredRole;
 }
 
 // Функция для проверки нескольких ролей
 function hasAnyRole($allowedRoles) {
     if (!isLoggedIn()) return false;
-    return in_array($_SESSION['user_role'], $allowedRoles);
+    return in_array($_SESSION['user_role'] ?? '', $allowedRoles);
 }
 
 // Функция для редиректа неавторизованных пользователей
@@ -63,6 +75,7 @@ function requireAnyRole($allowedRoles) {
 
 // Защита от CSRF - генерация токена
 function generateCsrfToken() {
+    initSessionVars();
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -71,6 +84,7 @@ function generateCsrfToken() {
 
 // Валидация CSRF токена
 function validateCsrfToken($token) {
+    initSessionVars();
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 

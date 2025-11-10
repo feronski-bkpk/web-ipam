@@ -102,37 +102,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактировать подсеть - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Редактирование подсети</h1>
+                        <p class="text-muted mb-0">Изменение параметров существующей подсети</p>
+                    </div>
+                    <div>
+                        <a href="list.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
-                        <li class="breadcrumb-item"><a href="list.php">Подсети</a></li>
-                        <li class="breadcrumb-item active">Редактировать подсеть</li>
-                    </ol>
-                </nav>
+            <div class="col-lg-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="card">
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pencil me-2"></i>Редактирование подсети
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Редактировать подсеть</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="">
-                            <!-- Неизменяемые поля (только для информации) -->
+                            <!-- Неизменяемые поля -->
                             <div class="mb-3">
-                                <label class="form-label">Подсеть (неизменяемо)</label>
+                                <label class="form-label">Подсеть</label>
                                 <input type="text" class="form-control" 
                                        value="<?php echo htmlspecialchars($subnet_data['network_address']); ?>/<?php echo $subnet_data['cidr_mask']; ?>" 
                                        readonly>
@@ -150,29 +174,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endif; ?>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label for="description" class="form-label">Описание</label>
                                 <textarea class="form-control" id="description" name="description" 
                                           rows="3" placeholder="Описание назначения подсети"><?php echo htmlspecialchars($_POST['description'] ?? $subnet_data['description']); ?></textarea>
                             </div>
 
                             <!-- Информация о записи -->
-                            <div class="card bg-light mb-3">
+                            <div class="card stat-card mb-4">
+                                <div class="card-header bg-transparent">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-info-circle me-2"></i>Информация о записи
+                                    </h6>
+                                </div>
                                 <div class="card-body">
-                                    <small class="text-muted">
-                                        <strong>Информация о записи:</strong><br>
-                                        Создана: <?php echo date('d.m.Y H:i', strtotime($subnet_data['created_at'])); ?><br>
-                                        <?php if ($subnet_data['updated_at'] && $subnet_data['updated_at'] != $subnet_data['created_at']): ?>
-                                            Обновлена: <?php echo date('d.m.Y H:i', strtotime($subnet_data['updated_at'])); ?><br>
-                                        <?php endif; ?>
-                                        ID записи: <?php echo $subnet_data['id']; ?>
-                                    </small>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Создана:</strong><br>
+                                                <?php echo date('d.m.Y H:i', strtotime($subnet_data['created_at'])); ?>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <?php if ($subnet_data['updated_at'] && $subnet_data['updated_at'] != $subnet_data['created_at']): ?>
+                                                    <strong>Обновлена:</strong><br>
+                                                    <?php echo date('d.m.Y H:i', strtotime($subnet_data['updated_at'])); ?>
+                                                <?php else: ?>
+                                                    <strong>ID записи:</strong><br>
+                                                    <?php echo $subnet_data['id']; ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                <a href="list.php" class="btn btn-secondary">Отмена</a>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="list.php" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -180,5 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

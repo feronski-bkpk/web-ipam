@@ -347,9 +347,9 @@ try {
                         <div class="d-flex align-items-center">
                             <i class="bi bi-person-circle me-2"></i>
                             <div>
-                                <div class="fw-bold"><?php echo htmlspecialchars($_SESSION['user_name']); ?></div>
+                                <div class="fw-bold"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></div>
                                 <small class="text-light">
-                                    <?php echo htmlspecialchars($_SESSION['user_role']); ?>
+                                    <?php echo htmlspecialchars($_SESSION['user_role'] ?? ''); ?>
                                 </small>
                             </div>
                         </div>
@@ -540,7 +540,7 @@ try {
             <div class="col-md-6">
                 <div class="card stat-card">
                     <div class="card-header bg-transparent">
-                        <h5 class="card-title mb-0">📊 Топ подсетей по использованию</h5>
+                        <h5 class="card-title mb-0">Топ подсетей по использованию</h5>
                     </div>
                     <div class="card-body">
                         <?php if (empty($subnet_usage)): ?>
@@ -556,19 +556,19 @@ try {
                                 ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                         <div>
-                                            <strong><code><?php echo htmlspecialchars($subnet['network_address']); ?>/<?php echo htmlspecialchars($subnet['cidr_mask']); ?></code></strong>
+                                            <strong><code><?php echo htmlspecialchars($subnet['network_address'] ?? ''); ?>/<?php echo htmlspecialchars($subnet['cidr_mask'] ?? ''); ?></code></strong>
                                             <br>
-                                            <small class="text-muted"><?php echo htmlspecialchars($subnet['description'] ?? 'Без описания'); ?></small>
+                                            <small class="text-muted"><?php echo htmlspecialchars(($subnet['description'] ?? '') ?: 'Без описания'); ?></small>
                                         </div>
                                         <div class="text-end">
-                                            <span class="badge bg-primary"><?php echo htmlspecialchars($subnet['active_ips']); ?>/<?php echo htmlspecialchars($subnet['total_ips']); ?></span>
+                                            <span class="badge bg-primary"><?php echo htmlspecialchars($subnet['active_ips'] ?? 0); ?>/<?php echo htmlspecialchars($subnet['total_ips'] ?? 0); ?></span>
                                             <br>
                                             <div class="progress progress-thin mt-1" style="width: 80px;">
                                                 <div class="progress-bar <?php echo $usage_class; ?>" 
-                                                     style="width: <?php echo htmlspecialchars($subnet['usage_percent']); ?>%">
+                                                     style="width: <?php echo htmlspecialchars($subnet['usage_percent'] ?? 0); ?>%">
                                                 </div>
                                             </div>
-                                            <small class="text-muted"><?php echo htmlspecialchars($subnet['usage_percent']); ?>%</small>
+                                            <small class="text-muted"><?php echo htmlspecialchars($subnet['usage_percent'] ?? 0); ?>%</small>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -582,7 +582,7 @@ try {
             <div class="col-md-6">
                 <div class="card stat-card">
                     <div class="card-header bg-transparent">
-                        <h5 class="card-title mb-0">👥 Топ клиентов по устройствам</h5>
+                        <h5 class="card-title mb-0">Топ клиентов по устройствам</h5>
                     </div>
                     <div class="card-body">
                         <?php if (empty($top_clients)): ?>
@@ -592,12 +592,12 @@ try {
                                 <?php foreach ($top_clients as $client): ?>
                                     <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                         <div>
-                                            <strong><?php echo htmlspecialchars($client['full_name']); ?></strong>
+                                            <strong><?php echo htmlspecialchars($client['full_name'] ?? ''); ?></strong>
                                             <br>
-                                            <small class="text-muted"><?php echo htmlspecialchars($client['contract_number']); ?></small>
+                                            <small class="text-muted"><?php echo htmlspecialchars($client['contract_number'] ?? ''); ?></small>
                                         </div>
                                         <div class="text-end">
-                                            <span class="badge bg-success"><?php echo htmlspecialchars($client['device_count']); ?> уст.</span>
+                                            <span class="badge bg-success"><?php echo htmlspecialchars($client['device_count'] ?? 0); ?> уст.</span>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -613,44 +613,44 @@ try {
             <div class="col-md-6 mb-4">
                 <div class="card stat-card">
                     <div class="card-header bg-transparent">
-                        <h5 class="card-title mb-0">🚀 Быстрый доступ</h5>
+                        <h5 class="card-title mb-0">Быстрый доступ</h5>
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
                             <div class="col-6">
                                 <a href="pages/ip-addresses/list.php" class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">📡</span>
+                                    <span class="me-2"></span>
                                     <span>IP-адреса</span>
                                 </a>
                             </div>
                             <div class="col-6">
                                 <a href="pages/clients/list.php" class="btn btn-outline-success w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">👥</span>
+                                    <span class="me-2"></span>
                                     <span>Клиенты</span>
                                 </a>
                             </div>
                             <div class="col-6">
                                 <a href="pages/devices/list.php" class="btn btn-outline-warning w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">🖧</span>
+                                    <span class="me-2"></span>
                                     <span>Устройства</span>
                                 </a>
                             </div>
                             <div class="col-6">
                                 <a href="pages/subnets/list.php" class="btn btn-outline-info w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">🌐</span>
+                                    <span class="me-2"></span>
                                     <span>Подсети</span>
                                 </a>
                             </div>
                             <?php if (hasRole('admin')): ?>
                             <div class="col-6">
                                 <a href="pages/audit/list.php" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">📋</span>
+                                    <span class="me-2"></span>
                                     <span>Аудит</span>
                                 </a>
                             </div>
                             <div class="col-6">
                                 <a href="pages/users/list.php" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center py-2">
-                                    <span class="me-2">👤</span>
+                                    <span class="me-2"></span>
                                     <span>Пользователи</span>
                                 </a>
                             </div>
@@ -663,7 +663,7 @@ try {
             <div class="col-md-6 mb-4">
                 <div class="card stat-card">
                     <div class="card-header bg-transparent">
-                        <h5 class="card-title mb-0">📝 Последние действия</h5>
+                        <h5 class="card-title mb-0">Последние действия</h5>
                     </div>
                     <div class="card-body">
                         <?php if (empty($recent_actions)): ?>
@@ -676,12 +676,12 @@ try {
                                     <div class="list-group-item recent-activity-item px-0 py-2 border-0">
                                         <div class="d-flex w-100 justify-content-between align-items-start">
                                             <div class="flex-grow-1">
-                                                <p class="mb-1 small"><?php echo htmlspecialchars($action['description']); ?></p>
+                                                <p class="mb-1 small"><?php echo htmlspecialchars($action['description'] ?? ''); ?></p>
                                                 <small class="text-muted">
                                                     <?php if ($action['full_name']): ?>
-                                                        <?php echo htmlspecialchars($action['full_name']); ?> • 
+                                                        <?php echo htmlspecialchars($action['full_name'] ?? ''); ?> • 
                                                     <?php endif; ?>
-                                                    <?php echo date('d.m.Y H:i', strtotime($action['created_at'])); ?>
+                                                    <?php echo date('d.m.Y H:i', strtotime($action['created_at'] ?? '')); ?>
                                                 </small>
                                             </div>
                                         </div>
@@ -699,31 +699,31 @@ try {
             <div class="col-12">
                 <div class="card system-info-card">
                     <div class="card-header bg-transparent">
-                        <h5 class="card-title mb-0">⚙️ Информация о системе</h5>
+                        <h5 class="card-title mb-0">Информация о системе</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-2">
                                     <strong>Текущий пользователь:</strong> 
-                                    <span class="float-end"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                                    <span class="float-end"><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></span>
                                 </div>
                                 <div class="mb-2">
                                     <strong>Роль:</strong> 
                                     <span class="float-end badge bg-<?php 
-                                        echo $_SESSION['user_role'] === 'admin' ? 'danger' : 
-                                             ($_SESSION['user_role'] === 'engineer' ? 'warning' : 'info'); 
-                                    ?>"><?php echo htmlspecialchars($_SESSION['user_role']); ?></span>
+                                        echo ($_SESSION['user_role'] ?? 'user') === 'admin' ? 'danger' : 
+                                             (($_SESSION['user_role'] ?? 'user') === 'engineer' ? 'warning' : 'info'); 
+                                    ?>"><?php echo htmlspecialchars($_SESSION['user_role'] ?? ''); ?></span>
                                 </div>
                                 <div class="mb-2">
                                     <strong>Логин:</strong> 
-                                    <span class="float-end"><?php echo htmlspecialchars($_SESSION['user_login']); ?></span>
+                                    <span class="float-end"><?php echo htmlspecialchars($_SESSION['user_login'] ?? ''); ?></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-2">
                                     <strong>Время входа:</strong> 
-                                    <span class="float-end"><?php echo date('d.m.Y H:i:s', $_SESSION['login_time']); ?></span>
+                                    <span class="float-end"><?php echo date('d.m.Y H:i:s', $_SESSION['login_time'] ?? time()); ?></span>
                                 </div>
                                 <div class="mb-2">
                                     <strong>Версия PHP:</strong> 

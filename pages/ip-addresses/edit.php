@@ -282,6 +282,7 @@ function getSubnetRange($network, $cidr) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактировать IP-адрес - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -299,8 +300,10 @@ function getSubnetRange($network, $cidr) {
                 </nav>
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1>Редактировать IP-адрес</h1>
-                    <a href="list.php" class="btn btn-outline-secondary">← Назад к списку</a>
+                    <h1 class="h3 mb-0">Редактировать IP-адрес</h1>
+                    <a href="list.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                    </a>
                 </div>
 
                 <?php if ($success): ?>
@@ -439,8 +442,12 @@ function getSubnetRange($network, $cidr) {
 
                             <div class="row mt-4">
                                 <div class="col-12">
-                                    <button type="submit" class="btn btn-primary">💾 Сохранить изменения</button>
-                                    <a href="list.php" class="btn btn-secondary">❌ Отмена</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                                    </button>
+                                    <a href="list.php" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Отмена
+                                    </a>
                                 </div>
                             </div>
                         </form>

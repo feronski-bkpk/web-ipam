@@ -7,14 +7,17 @@
     border: none;
     border-radius: 10px;
     transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn {
     border-radius: 6px;
+    font-weight: 500;
 }
 
 .navbar-brand {
@@ -28,4 +31,153 @@
 
 .badge {
     font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Стили для карточек статистики */
+.stat-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+/* Стили для прогресс-баров */
+.usage-progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.progress-thin { 
+    height: 6px; 
+}
+
+.usage-high { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+.usage-medium { background: linear-gradient(135deg, #feca57, #ff9ff3); }
+.usage-low { background: linear-gradient(135deg, #48dbfb, #0abde3); }
+.usage-very-low { background: linear-gradient(135deg, #1dd1a1, #10ac84); }
+
+/* Стили для навигации */
+.main-nav {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-bottom: 3px solid #3498db;
+    padding: 0.5rem 0;
+}
+
+.nav-link-custom {
+    color: #ecf0f1 !important;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    margin: 0 2px;
+    font-weight: 500;
+}
+
+.nav-link-custom:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db !important;
+    transform: translateY(-1px);
+}
+
+.nav-link-custom.active {
+    background-color: #3498db;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.nav-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.nav-divider {
+    border-left: 1px solid rgba(255,255,255,0.2);
+    height: 30px;
+    margin: 0 1rem;
+}
+
+/* Стили для таблиц */
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #2c3e50;
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* Стили для состояний IP */
+.ip-status-active { background-color: rgba(40, 167, 69, 0.05); }
+.ip-status-free { background-color: rgba(108, 117, 125, 0.05); }
+.ip-status-reserved { background-color: rgba(255, 193, 7, 0.05); }
+
+/* Стили для ролей */
+.role-badge-admin { background-color: #dc3545; }
+.role-badge-engineer { background-color: #fd7e14; }
+.role-badge-operator { background-color: #0dcaf0; }
+
+/* Стили для статусов пользователей */
+.user-status-active { color: #198754; }
+.user-status-locked { color: #dc3545; }
+.user-status-warning { color: #fd7e14; }
+
+/* Стили для поиска */
+.search-container {
+    max-width: 400px;
+    position: relative;
+}
+
+.search-form {
+    position: relative;
+}
+
+.user-info {
+    color: #ecf0f1;
+    font-size: 0.9rem;
+}
+
+/* Стили для системных карточек */
+.system-info-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: none;
+}
+
+/* Стили для активности */
+.recent-activity-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.recent-activity-item:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
 }

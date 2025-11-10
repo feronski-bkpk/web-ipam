@@ -201,23 +201,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Функция проверки принадлежности IP к подсети
 function isIpInSubnet($ip, $network, $cidr) {
-    // Преобразуем IP и сеть в 32-битные числа
     $ip_long = ip2long($ip);
     $network_long = ip2long($network);
     
-    // Проверяем что преобразование прошло успешно
     if ($ip_long === false || $network_long === false) {
         return false;
     }
     
-    // Создаем маску подсети
     $mask = -1 << (32 - $cidr);
-    
-    // Применяем маску к сети и IP
     $network_masked = $network_long & $mask;
     $ip_masked = $ip_long & $mask;
     
-    // Сравниваем
     return $network_masked == $ip_masked;
 }
 
@@ -243,13 +237,15 @@ function getSubnetRange($network, $cidr) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить IP-адрес - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
-        <div class="row">
+        <!-- Заголовок и навигация -->
+        <div class="row mb-4">
             <div class="col-12">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
@@ -259,167 +255,199 @@ function getSubnetRange($network, $cidr) {
                     </ol>
                 </nav>
 
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1>Добавить IP-адрес</h1>
-                    <a href="list.php" class="btn btn-outline-secondary">Назад к списку</a>
-                </div>
-
-                <?php if ($success): ?>
-                    <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                <?php endif; ?>
-
-                <?php if (isset($errors['general'])): ?>
-                    <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                <?php endif; ?>
-
-                <div class="card">
-                    <div class="card-body">
-                        <form method="POST" action="" id="ip-form">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <!-- Поле IP-адрес -->
-                                    <div class="mb-3">
-                                        <label for="ip_address" class="form-label">IP-адрес *</label>
-                                        <input type="text" class="form-control <?php echo isset($errors['ip_address']) ? 'is-invalid' : ''; ?>" 
-                                               id="ip_address" name="ip_address" 
-                                               value="<?php echo htmlspecialchars($_POST['ip_address'] ?? ''); ?>" 
-                                               required>
-                                        <?php if (isset($errors['ip_address'])): ?>
-                                            <div class="invalid-feedback"><?php echo htmlspecialchars($errors['ip_address']); ?></div>
-                                        <?php endif; ?>
-                                        <div class="form-text">Введите IP-адрес в формате: 192.168.1.1</div>
-                                    </div>
-
-                                    <!-- Выбор подсети -->
-                                    <div class="mb-3">
-                                        <label for="subnet_id" class="form-label">Подсеть *</label>
-                                        <select class="form-select <?php echo isset($errors['subnet_id']) ? 'is-invalid' : ''; ?>" 
-                                                id="subnet_id" name="subnet_id" required>
-                                            <option value="">Выберите подсеть</option>
-                                            <?php foreach ($subnets as $subnet): 
-                                                $selected = ($_POST['subnet_id'] ?? '') == $subnet['id'] ? 'selected' : '';
-                                                $display = $subnet['network_address'] . '/' . $subnet['cidr_mask'];
-                                                if ($subnet['description']) {
-                                                    $display .= ' - ' . $subnet['description'];
-                                                }
-                                            ?>
-                                                <option value="<?php echo $subnet['id']; ?>" <?php echo $selected; ?>>
-                                                    <?php echo htmlspecialchars($display); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <?php if (isset($errors['subnet_id'])): ?>
-                                            <div class="invalid-feedback"><?php echo htmlspecialchars($errors['subnet_id']); ?></div>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- Выбор устройства -->
-                                    <div class="mb-3">
-                                        <label for="device_id" class="form-label">Устройство</label>
-                                        <select class="form-select <?php echo isset($errors['device_id']) ? 'is-invalid' : ''; ?>" 
-                                                id="device_id" name="device_id">
-                                            <option value="">Не привязано к устройству</option>
-                                            <?php foreach ($devices as $device): 
-                                                $selected = ($_POST['device_id'] ?? '') == $device['id'] ? 'selected' : '';
-                                                $display = $device['mac_address'];
-                                                if ($device['model']) {
-                                                    $display .= ' - ' . $device['model'];
-                                                }
-                                                if ($device['client_name']) {
-                                                    $display .= ' (' . $device['client_name'] . ')';
-                                                }
-                                            ?>
-                                                <option value="<?php echo $device['id']; ?>" <?php echo $selected; ?>>
-                                                    <?php echo htmlspecialchars($display); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <?php if (isset($errors['device_id'])): ?>
-                                            <div class="invalid-feedback"><?php echo htmlspecialchars($errors['device_id']); ?></div>
-                                        <?php endif; ?>
-                                        <div class="form-text">Показываются только устройства без IP-адресов</div>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <!-- Тип IP-адреса -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Тип IP-адреса *</label>
-                                        <div>
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="type" id="type_gray" 
-                                                       value="gray" <?php echo ($_POST['type'] ?? 'gray') === 'gray' ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="type_gray">Серый</label>
-                                            </div>
-                                            <div class="form-check form-check-inline">
-                                                <input class="form-check-input" type="radio" name="type" id="type_white" 
-                                                       value="white" <?php echo ($_POST['type'] ?? '') === 'white' ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="type_white">Белый</label>
-                                            </div>
-                                        </div>
-                                        <?php if (isset($errors['type'])): ?>
-                                            <div class="text-danger"><?php echo htmlspecialchars($errors['type']); ?></div>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- Статус -->
-                                    <div class="mb-3">
-                                        <label for="status" class="form-label">Статус *</label>
-                                        <select class="form-select <?php echo isset($errors['status']) ? 'is-invalid' : ''; ?>" 
-                                                id="status" name="status" required>
-                                            <option value="free" <?php echo ($_POST['status'] ?? 'free') === 'free' ? 'selected' : ''; ?>>Свободен</option>
-                                            <option value="active" <?php echo ($_POST['status'] ?? '') === 'active' ? 'selected' : ''; ?>>Активен</option>
-                                            <option value="reserved" <?php echo ($_POST['status'] ?? '') === 'reserved' ? 'selected' : ''; ?>>Зарезервирован</option>
-                                        </select>
-                                        <?php if (isset($errors['status'])): ?>
-                                            <div class="invalid-feedback"><?php echo htmlspecialchars($errors['status']); ?></div>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- Описание -->
-                                    <div class="mb-3">
-                                        <label for="description" class="form-label">Описание</label>
-                                        <textarea class="form-control" id="description" name="description" 
-                                                  rows="3" placeholder="Дополнительная информация о IP-адресе"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
-                                        <div class="form-text">Необязательное поле для заметок</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary">Добавить IP-адрес</button>
-                                    <a href="list.php" class="btn btn-secondary">Отмена</a>
-                                </div>
-                            </div>
-                        </form>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Добавить IP-адрес</h1>
+                        <p class="text-muted mb-0">Создание новой записи в системе</p>
                     </div>
+                    <a href="list.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                    </a>
                 </div>
+            </div>
+        </div>
 
-                <!-- Информация о правилах назначения статусов -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Правила системы</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Статусы IP-адресов</strong>
-                                <ul class="text-muted">
-                                    <li><strong>Активен</strong> - используется устройством</li>
-                                    <li><strong>Свободен</strong> - доступен для назначения</li>
-                                    <li><strong>Зарезервирован</strong> - зарезервирован для специальных целей</li>
-                                </ul>
+        <!-- Уведомления -->
+        <?php if ($success): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <?php echo htmlspecialchars($success); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($errors['general'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <?php echo htmlspecialchars($errors['general']); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
+        <!-- Основная форма -->
+        <div class="card stat-card">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Форма добавления IP-адреса
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="" id="ip-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- Поле IP-адрес -->
+                            <div class="mb-3">
+                                <label for="ip_address" class="form-label">IP-адрес <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control <?php echo isset($errors['ip_address']) ? 'is-invalid' : ''; ?>" 
+                                       id="ip_address" name="ip_address" 
+                                       value="<?php echo htmlspecialchars($_POST['ip_address'] ?? ''); ?>" 
+                                       required
+                                       placeholder="192.168.1.1">
+                                <?php if (isset($errors['ip_address'])): ?>
+                                    <div class="invalid-feedback"><?php echo htmlspecialchars($errors['ip_address']); ?></div>
+                                <?php endif; ?>
+                                <div class="form-text">Введите IP-адрес в формате: 192.168.1.1</div>
                             </div>
-                            <div class="col-md-6">
-                                <strong>Ограничения</strong>
-                                <ul class="text-muted">
-                                    <li>Одно устройство может иметь только один IP-адрес</li>
-                                    <li>Активный IP должен быть привязан к устройству</li>
-                                    <li>Свободный IP не может быть привязан к устройству</li>
-                                </ul>
+
+                            <!-- Выбор подсети -->
+                            <div class="mb-3">
+                                <label for="subnet_id" class="form-label">Подсеть <span class="text-danger">*</span></label>
+                                <select class="form-select <?php echo isset($errors['subnet_id']) ? 'is-invalid' : ''; ?>" 
+                                        id="subnet_id" name="subnet_id" required>
+                                    <option value="">Выберите подсеть</option>
+                                    <?php foreach ($subnets as $subnet): 
+                                        $selected = ($_POST['subnet_id'] ?? '') == $subnet['id'] ? 'selected' : '';
+                                        $display = $subnet['network_address'] . '/' . $subnet['cidr_mask'];
+                                        if ($subnet['description']) {
+                                            $display .= ' - ' . $subnet['description'];
+                                        }
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($subnet['id']); ?>" <?php echo $selected; ?>>
+                                            <?php echo htmlspecialchars($display); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if (isset($errors['subnet_id'])): ?>
+                                    <div class="invalid-feedback"><?php echo htmlspecialchars($errors['subnet_id']); ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Выбор устройства -->
+                            <div class="mb-3">
+                                <label for="device_id" class="form-label">Устройство</label>
+                                <select class="form-select <?php echo isset($errors['device_id']) ? 'is-invalid' : ''; ?>" 
+                                        id="device_id" name="device_id">
+                                    <option value="">Не привязано к устройству</option>
+                                    <?php foreach ($devices as $device): 
+                                        $selected = ($_POST['device_id'] ?? '') == $device['id'] ? 'selected' : '';
+                                        $display = $device['mac_address'];
+                                        if ($device['model']) {
+                                            $display .= ' - ' . $device['model'];
+                                        }
+                                        if ($device['client_name']) {
+                                            $display .= ' (' . $device['client_name'] . ')';
+                                        }
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($device['id']); ?>" <?php echo $selected; ?>>
+                                            <?php echo htmlspecialchars($display); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if (isset($errors['device_id'])): ?>
+                                    <div class="invalid-feedback"><?php echo htmlspecialchars($errors['device_id']); ?></div>
+                                <?php endif; ?>
+                                <div class="form-text">Показываются только устройства без IP-адресов</div>
                             </div>
                         </div>
+
+                        <div class="col-md-6">
+                            <!-- Тип IP-адреса -->
+                            <div class="mb-3">
+                                <label class="form-label">Тип IP-адреса <span class="text-danger">*</span></label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="type_gray" 
+                                               value="gray" <?php echo ($_POST['type'] ?? 'gray') === 'gray' ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="type_gray">
+                                            <i class="bi bi-layers me-1"></i>Серый
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="type" id="type_white" 
+                                               value="white" <?php echo ($_POST['type'] ?? '') === 'white' ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="type_white">
+                                            <i class="bi bi-globe me-1"></i>Белый
+                                        </label>
+                                    </div>
+                                </div>
+                                <?php if (isset($errors['type'])): ?>
+                                    <div class="text-danger small mt-1"><?php echo htmlspecialchars($errors['type']); ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Статус -->
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Статус <span class="text-danger">*</span></label>
+                                <select class="form-select <?php echo isset($errors['status']) ? 'is-invalid' : ''; ?>" 
+                                        id="status" name="status" required>
+                                    <option value="free" <?php echo ($_POST['status'] ?? 'free') === 'free' ? 'selected' : ''; ?>>Свободен</option>
+                                    <option value="active" <?php echo ($_POST['status'] ?? '') === 'active' ? 'selected' : ''; ?>>Активен</option>
+                                    <option value="reserved" <?php echo ($_POST['status'] ?? '') === 'reserved' ? 'selected' : ''; ?>>Зарезервирован</option>
+                                </select>
+                                <?php if (isset($errors['status'])): ?>
+                                    <div class="invalid-feedback"><?php echo htmlspecialchars($errors['status']); ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <!-- Описание -->
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3" placeholder="Дополнительная информация о IP-адресе"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                                <div class="form-text">Необязательное поле для заметок</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Добавить IP-адрес
+                            </button>
+                            <a href="list.php" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Отмена
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Информация о правилах системы -->
+        <div class="card stat-card mt-4">
+            <div class="card-header bg-transparent">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Правила системы
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Статусы IP-адресов</h6>
+                        <ul class="text-muted">
+                            <li><strong>Активен</strong> - используется устройством</li>
+                            <li><strong>Свободен</strong> - доступен для назначения</li>
+                            <li><strong>Зарезервирован</strong> - зарезервирован для специальных целей</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Ограничения</h6>
+                        <ul class="text-muted">
+                            <li>Одно устройство может иметь только один IP-адрес</li>
+                            <li>Активный IP должен быть привязан к устройству</li>
+                            <li>Свободный IP не может быть привязан к устройству</li>
+                            <li>Зарезервированный IP не должен быть привязан к устройству</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -461,7 +489,7 @@ function getSubnetRange($network, $cidr) {
             if (!isValid) {
                 const errorDiv = document.createElement('div');
                 errorDiv.id = 'status-error';
-                errorDiv.className = 'text-danger mt-1';
+                errorDiv.className = 'text-danger small mt-1';
                 errorDiv.textContent = errorMessage;
                 document.getElementById('status').parentNode.appendChild(errorDiv);
             }

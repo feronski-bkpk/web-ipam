@@ -162,38 +162,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактировать пользователя - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
+        <!-- Заголовок -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Редактирование пользователя</h1>
+                        <p class="text-muted mb-0">Изменение данных пользователя системы</p>
+                    </div>
+                    <div>
+                        <a href="list.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
-            <div class="col-md-8 mx-auto">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
-                        <li class="breadcrumb-item"><a href="list.php">Пользователи</a></li>
-                        <li class="breadcrumb-item active">Редактировать пользователя</li>
-                    </ol>
-                </nav>
+            <div class="col-lg-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="card">
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pencil me-2"></i>Редактирование пользователя
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Редактировать пользователя</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="" id="user-form">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="login" class="form-label">Логин *</label>
+                                        <label for="login" class="form-label">Логин <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control <?php echo isset($errors['login']) ? 'is-invalid' : ''; ?>" 
                                                id="login" name="login" 
                                                value="<?php echo htmlspecialchars($_POST['login'] ?? $user_data['login']); ?>" 
@@ -206,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="role" class="form-label">Роль *</label>
+                                        <label for="role" class="form-label">Роль <span class="text-danger">*</span></label>
                                         <select class="form-select <?php echo isset($errors['role']) ? 'is-invalid' : ''; ?>" 
                                                 id="role" name="role" required>
                                             <option value="operator" <?php echo ($_POST['role'] ?? $user_data['role']) === 'operator' ? 'selected' : ''; ?>>Оператор</option>
@@ -221,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="mb-3">
-                                <label for="full_name" class="form-label">ФИО *</label>
+                                <label for="full_name" class="form-label">ФИО <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control <?php echo isset($errors['full_name']) ? 'is-invalid' : ''; ?>" 
                                        id="full_name" name="full_name" 
                                        value="<?php echo htmlspecialchars($_POST['full_name'] ?? $user_data['full_name']); ?>" 
@@ -240,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                    id="password" name="password" 
                                                    minlength="6">
                                             <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password')">
-                                                👁️
+                                                <i class="bi bi-eye"></i>
                                             </button>
                                         </div>
                                         <?php if (isset($errors['password'])): ?>
@@ -258,7 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                    id="password_confirm" name="password_confirm" 
                                                    minlength="6">
                                             <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirm')">
-                                                👁️
+                                                <i class="bi bi-eye"></i>
                                             </button>
                                         </div>
                                         <?php if (isset($errors['password_confirm'])): ?>
@@ -269,22 +293,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <!-- Информация о записи -->
-                            <div class="card bg-light mb-3">
+                            <div class="card stat-card mb-4">
+                                <div class="card-header bg-transparent">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-info-circle me-2"></i>Информация о записи
+                                    </h6>
+                                </div>
                                 <div class="card-body">
-                                    <small class="text-muted">
-                                        <strong>Информация о записи:</strong><br>
-                                        Создан: <?php echo date('d.m.Y H:i', strtotime($user_data['created_at'])); ?><br>
-                                        <?php if ($user_data['last_login']): ?>
-                                            Последний вход: <?php echo date('d.m.Y H:i', strtotime($user_data['last_login'])); ?><br>
-                                        <?php endif; ?>
-                                        ID записи: <?php echo $user_data['id']; ?>
-                                    </small>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Создан:</strong><br>
+                                                <?php echo date('d.m.Y H:i', strtotime($user_data['created_at'])); ?>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <?php if ($user_data['last_login']): ?>
+                                                    <strong>Последний вход:</strong><br>
+                                                    <?php echo date('d.m.Y H:i', strtotime($user_data['last_login'])); ?>
+                                                <?php else: ?>
+                                                    <strong>ID записи:</strong><br>
+                                                    <?php echo $user_data['id']; ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                                <a href="list.php" class="btn btn-secondary">Отмена</a>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="list.php" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -297,8 +341,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         function togglePassword(fieldId) {
             const field = document.getElementById(fieldId);
+            const icon = field.parentNode.querySelector('.bi');
             const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
             field.setAttribute('type', type);
+            
+            if (type === 'text') {
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
         }
 
         // Валидация паролей на клиенте

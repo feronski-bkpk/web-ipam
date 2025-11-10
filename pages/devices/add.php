@@ -137,13 +137,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить устройство - Web-IPAM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../../includes/header.php'; ?>
     
     <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-8 mx-auto">
+        <!-- Заголовок и навигация -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="../../index.php">Главная</a></li>
@@ -152,31 +155,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </ol>
                 </nav>
 
-                <div class="card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1">Добавить устройство</h1>
+                        <p class="text-muted mb-0">Создание новой записи сетевого устройства</p>
+                    </div>
+                    <a href="list.php" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <!-- Уведомления -->
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <?php echo htmlspecialchars($success); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (isset($errors['general'])): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <?php echo htmlspecialchars($errors['general']); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Основная форма -->
+                <div class="card stat-card">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-hdd me-2"></i>Форма добавления устройства
+                        </h5>
+                    </div>
                     <div class="card-body">
-                        <h4 class="card-title">Добавить новое устройство</h4>
-                        
-                        <?php if ($success): ?>
-                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
-                        <?php endif; ?>
-
-                        <?php if (isset($errors['general'])): ?>
-                            <div class="alert alert-danger"><?php echo htmlspecialchars($errors['general']); ?></div>
-                        <?php endif; ?>
-
                         <form method="POST" action="" id="device-form">
+                            <!-- MAC-адрес -->
                             <div class="mb-3">
-                                <label for="mac_address" class="form-label">MAC-адрес *</label>
+                                <label for="mac_address" class="form-label">MAC-адрес <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control <?php echo isset($errors['mac_address']) ? 'is-invalid' : ''; ?>" 
                                        id="mac_address" name="mac_address" 
                                        value="<?php echo htmlspecialchars($_POST['mac_address'] ?? ''); ?>" 
-                                       required maxlength="17" placeholder="AA:BB:CC:DD:EE:FF">
+                                       required maxlength="17" 
+                                       placeholder="AA:BB:CC:DD:EE:FF">
                                 <?php if (isset($errors['mac_address'])): ?>
                                     <div class="invalid-feedback"><?php echo htmlspecialchars($errors['mac_address']); ?></div>
                                 <?php endif; ?>
-                                <div class="form-text">Формат: XX:XX:XX:XX:XX:XX</div>
+                                <div class="form-text">Формат: XX:XX:XX:XX:XX:XX (буквы в верхнем регистре)</div>
                             </div>
 
+                            <!-- Модель и серийный номер -->
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -184,10 +217,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input type="text" class="form-control <?php echo isset($errors['model']) ? 'is-invalid' : ''; ?>" 
                                                id="model" name="model" 
                                                value="<?php echo htmlspecialchars($_POST['model'] ?? ''); ?>" 
-                                               maxlength="100" placeholder="TP-Link Archer C7">
+                                               maxlength="100" 
+                                               placeholder="TP-Link Archer C7">
                                         <?php if (isset($errors['model'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['model']); ?></div>
                                         <?php endif; ?>
+                                        <div class="form-text">Например: роутер, коммутатор, точка доступа</div>
                                     </div>
                                 </div>
                                 
@@ -197,15 +232,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input type="text" class="form-control <?php echo isset($errors['serial_number']) ? 'is-invalid' : ''; ?>" 
                                                id="serial_number" name="serial_number" 
                                                value="<?php echo htmlspecialchars($_POST['serial_number'] ?? ''); ?>" 
-                                               maxlength="50">
+                                               maxlength="50"
+                                               placeholder="SN123456789">
                                         <?php if (isset($errors['serial_number'])): ?>
                                             <div class="invalid-feedback"><?php echo htmlspecialchars($errors['serial_number']); ?></div>
                                         <?php endif; ?>
+                                        <div class="form-text">Необязательное поле</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mb-3">
+                            <!-- Клиент -->
+                            <div class="mb-4">
                                 <label for="client_id" class="form-label">Клиент</label>
                                 <select class="form-select <?php echo isset($errors['client_id']) ? 'is-invalid' : ''; ?>" 
                                         id="client_id" name="client_id">
@@ -214,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         $selected = ($_POST['client_id'] ?? '') == $client['id'] ? 'selected' : '';
                                         $display = $client['full_name'] . ' (' . $client['contract_number'] . ')';
                                     ?>
-                                        <option value="<?php echo $client['id']; ?>" <?php echo $selected; ?>>
+                                        <option value="<?php echo htmlspecialchars($client['id']); ?>" <?php echo $selected; ?>>
                                             <?php echo htmlspecialchars($display); ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -222,28 +260,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php if (isset($errors['client_id'])): ?>
                                     <div class="invalid-feedback"><?php echo htmlspecialchars($errors['client_id']); ?></div>
                                 <?php endif; ?>
+                                <div class="form-text">Устройство можно привязать к существующему клиенту</div>
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex">
-                                <button type="submit" class="btn btn-primary">Добавить устройство</button>
-                                <a href="list.php" class="btn btn-secondary">Отмена</a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Добавить устройство
+                                </button>
+                                <a href="list.php" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Отмена
+                                </a>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- Правила системы -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Правила системы</h5>
+                <!-- Информация о устройствах -->
+                <div class="card stat-card mt-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Информация об устройствах
+                        </h5>
                     </div>
                     <div class="card-body">
-                        <ul class="text-muted">
-                            <li>MAC-адрес должен быть уникальным в системе</li>
-                            <li>Одно устройство может быть привязано только к одному клиенту</li>
-                            <li>Одному устройству может быть назначен только один IP-адрес</li>
-                            <li>Устройство без клиента может использоваться для служебных целей</li>
-                        </ul>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Обязательные поля</h6>
+                                <ul class="text-muted small">
+                                    <li><strong>MAC-адрес</strong> - уникальный идентификатор устройства</li>
+                                    <li>Должен быть в формате XX:XX:XX:XX:XX:XX</li>
+                                    <li>Должен быть уникальным в системе</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Особенности</h6>
+                                <ul class="text-muted small">
+                                    <li>Одно устройство - один клиент</li>
+                                    <li>Одному устройству - один IP-адрес</li>
+                                    <li>Устройства без клиента - для служебных целей</li>
+                                    <li>MAC-адрес используется для идентификации в сети</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
