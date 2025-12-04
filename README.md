@@ -264,7 +264,7 @@ $dbname = "web_ipam";         // Имя базы данных
 
 ### Структура базы данных
 
-![Database Schema](/C:\wamp64\www\web-ipam/assets/img/database-schema.png)
+![Database Schema](/assets/img/database-schema.png)
 
 *Диаграмма взаимосвязей таблиц базы данных*
 
